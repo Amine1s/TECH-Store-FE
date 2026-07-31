@@ -22,7 +22,7 @@ interface AdminDashboardProps {
   onClose: () => void;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+25: const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 
 export function AdminDashboard({
   products,
