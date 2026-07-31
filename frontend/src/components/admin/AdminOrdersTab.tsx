@@ -11,7 +11,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+14: const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 
 interface AdminOrdersTabProps {
   adminOrders: any[];
