@@ -1,0 +1,48 @@
+/* Cart Drawer & Shopping Cart Styles */
+
+.cart-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.cart-drawer-content {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  width: 100%;
+  max-width: 28rem;
+  background-color: #09090b;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .cart-drawer-content {
+    padding: 1.5rem;
+  }
+}
+
+.cart-item-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: rgba(24, 24, 27, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.cart-summary-footer {
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 1rem;
+  padding-bottom: 0.5rem;
+}

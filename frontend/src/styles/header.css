@@ -1,0 +1,67 @@
+/* Navigation, Header & Search Bar Styles */
+
+.header-container {
+  width: 100%;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .header-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+}
+
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  background-color: rgba(9, 9, 11, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 0.75rem 2.75rem 0.75rem 1rem;
+  color: #ffffff;
+  font-size: 0.875rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #39FF14;
+  box-shadow: 0 0 12px rgba(57, 255, 20, 0.2);
+}
+
+.category-chip {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.category-chip-active {
+  background-color: #39FF14;
+  color: #000000;
+  box-shadow: 0 4px 12px rgba(57, 255, 20, 0.25);
+}
+
+.category-chip-inactive {
+  background-color: rgba(24, 24, 27, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #a1a1aa;
+}
+
+.category-chip-inactive:hover {
+  background-color: rgba(39, 39, 42, 0.9);
+  color: #ffffff;
+}

@@ -13,6 +13,8 @@ import { AdminAnalyticsTab } from "./admin/AdminAnalyticsTab";
 import { AdminCatalogTab } from "./admin/AdminCatalogTab";
 import { AdminProductFormTab } from "./admin/AdminProductFormTab";
 import { AdminOrdersTab } from "./admin/AdminOrdersTab";
+import { AdminSecurityTab } from "./admin/AdminSecurityTab";
+import { ShieldCheck } from "lucide-react";
 
 interface AdminDashboardProps {
   products: Product[];
@@ -22,7 +24,7 @@ interface AdminDashboardProps {
   onClose: () => void;
 }
 
-25: const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 
 export function AdminDashboard({
   products,
@@ -32,7 +34,7 @@ export function AdminDashboard({
   onClose,
 }: AdminDashboardProps) {
   // Navigation & Search States
-  const [activeTab, setActiveTab] = useState<"analytics" | "list" | "form" | "orders">("analytics");
+  const [activeTab, setActiveTab] = useState<"analytics" | "list" | "form" | "orders" | "security">("analytics");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -440,6 +442,19 @@ export function AdminDashboard({
             </span>
           )}
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("security")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer border ${
+            activeTab === "security"
+              ? "bg-emerald-400 text-black border-emerald-400 shadow-lg shadow-emerald-400/10"
+              : "bg-neutral-950/40 text-neutral-400 border-neutral-800 hover:text-white hover:bg-neutral-900"
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <span>سجل الأمان ودرع الحماية</span>
+        </button>
       </div>
 
       {/* Global Alerts inside Admin Dashboard */}
@@ -553,6 +568,8 @@ export function AdminDashboard({
           setFormSuccess={setFormSuccess}
         />
       )}
+
+      {activeTab === "security" && <AdminSecurityTab />}
     </div>
   );
 }

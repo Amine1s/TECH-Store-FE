@@ -31,7 +31,13 @@ import {
   RefreshCw,
   Mail,
   LogOut,
-  ArrowUp
+  ArrowUp,
+  CreditCard,
+  AlertTriangle,
+  Building2,
+  Wallet,
+  ShieldCheck,
+  AlertOctagon
 } from "lucide-react";
 import { WaveBackground } from "./components/WaveBackground";
 import { getProducts, Product } from "./data/products";
@@ -88,6 +94,25 @@ export default function App() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [loginForm, setLoginForm] = useState({ name: "", email: "" });
   const [loginPassword, setLoginPassword] = useState("");
+  const [loginSecurityMsg, setLoginSecurityMsg] = useState<{ type: "error" | "warning" | "info"; text: string; remainingAttempts?: number } | null>(null);
+  const [lockoutRemainingSeconds, setLockoutRemainingSeconds] = useState<number>(0);
+  const [isAuthenticatingAdmin, setIsAuthenticatingAdmin] = useState(false);
+
+  // Security Lockout real-time countdown effect
+  useEffect(() => {
+    if (lockoutRemainingSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setLockoutRemainingSeconds((prev) => {
+        if (prev <= 1) {
+          setLoginSecurityMsg(null);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutRemainingSeconds]);
+
   const [allOrders, setAllOrders] = useState<any[]>([]);
   const [isCustomerOrdersOpen, setIsCustomerOrdersOpen] = useState(false);
   const [activeCustomerOrder, setActiveCustomerOrder] = useState<any | null>(null);
@@ -98,7 +123,11 @@ export default function App() {
     phone: "",
     city: "الرياض",
     address: "",
-    email: ""
+    email: "",
+    paymentMethod: "test_card",
+    cardNumber: "4000 0000 0000 0000",
+    cardExpiry: "12/28",
+    cardCvc: "123"
   });
 
   // Sync cart session to backend in real-time
@@ -398,7 +427,7 @@ export default function App() {
   const totalCartPrice = cart.reduce((acc, curr) => acc + (curr.product.price * curr.quantity), 0);
 
   return (
-    <div className="min-h-screen text-white relative overflow-x-hidden font-sans pb-16 selection:bg-lime-400 selection:text-black" dir="rtl">
+    <div className="min-h-screen text-white relative overflow-x-hidden font-sans px-3.5 py-3 sm:px-6 sm:py-6 pb-24 sm:pb-16 selection:bg-lime-400 selection:text-black app-layout-wrapper" dir="rtl">
       {/* 1. Animated wave background with golden twinkling points */}
       <WaveBackground isAdmin={isAdminMode} />
 
@@ -1002,31 +1031,38 @@ export default function App() {
 
       {/* 7. Detailed Product View Modal */}
       {selectedProduct && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" id="product-detail-modal">
-          <div className="bg-black/95 border border-neutral-800 rounded-3xl max-w-2xl w-full p-6 relative overflow-hidden text-right">
+        <div 
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-fade-in" 
+          id="product-detail-modal"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedProduct(null);
+          }}
+        >
+          <div className="bg-zinc-950/95 border border-neutral-800 rounded-2xl sm:rounded-3xl max-w-2xl w-full p-4 sm:p-6 relative text-right max-h-[90vh] flex flex-col overflow-y-auto custom-scrollbar shadow-2xl my-auto">
             
             {/* Modal Ambient Glow Background */}
-            <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/10 blur-3xl -z-10 rounded-full"></div>
+            <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/10 blur-3xl -z-10 rounded-full pointer-events-none"></div>
             
             <button 
               onClick={() => setSelectedProduct(null)}
-              className="absolute top-4 left-4 p-2 bg-zinc-900 hover:bg-neutral-800 text-neutral-400 hover:text-white rounded-full transition cursor-pointer"
+              className="absolute top-3 left-3 sm:top-4 sm:left-4 p-2 bg-zinc-900/90 hover:bg-neutral-800 text-neutral-400 hover:text-white rounded-full transition cursor-pointer z-20 border border-neutral-800"
+              title="إغلاق النافذة"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-2 sm:mt-4">
               
               {/* Image side */}
-              <div className="space-y-4">
-                <div className="aspect-square bg-zinc-950 rounded-2xl overflow-hidden border border-neutral-800">
+              <div className="space-y-3">
+                <div className="aspect-video md:aspect-square max-h-56 md:max-h-none bg-zinc-950 rounded-2xl overflow-hidden border border-neutral-800 relative">
                   <img 
                     src={selectedProduct.image} 
                     alt={selectedProduct.name} 
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="bg-neutral-900/40 border border-neutral-800/80 rounded-xl p-3 flex items-center justify-between text-xs text-neutral-400">
+                <div className="bg-neutral-900/40 border border-neutral-800/80 rounded-xl p-2.5 flex items-center justify-between text-xs text-neutral-400">
                   <span>تقييم العملاء الموثق:</span>
                   <span className="flex items-center gap-1 text-amber-400 font-bold font-mono">
                     <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
@@ -1036,13 +1072,13 @@ export default function App() {
               </div>
 
               {/* Info side */}
-              <div className="flex flex-col justify-between">
+              <div className="flex flex-col justify-between space-y-4">
                 <div className="space-y-3">
-                  <span className="text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-3 py-1 rounded-full font-bold">
+                  <span className="inline-block text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-3 py-1 rounded-full font-bold">
                     {selectedProduct.categoryAr}
                   </span>
                   
-                  <h3 className="text-xl font-black text-white">{selectedProduct.name}</h3>
+                  <h3 className="text-lg sm:text-xl font-black text-white leading-snug">{selectedProduct.name}</h3>
                   <p className="text-xs text-neutral-300 leading-relaxed">{selectedProduct.description}</p>
                   
                   {/* Detailed Specs List */}
@@ -1092,16 +1128,16 @@ export default function App() {
                   )}
                 </div>
 
-                <div className="pt-4 border-t border-neutral-900 mt-4 space-y-3">
+                <div className="pt-4 border-t border-neutral-900 mt-4 space-y-3 bg-zinc-950/90 backdrop-blur-sm p-1 rounded-xl">
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-[10px] text-neutral-500">القيمة الإجمالية</span>
                       <div className="flex items-baseline gap-2">
-                        <div className="text-2xl font-black text-white font-mono">
+                        <div className="text-xl sm:text-2xl font-black text-white font-mono">
                           {selectedProduct.price.toLocaleString()} <span className="text-xs text-lime-400 font-sans">ر.س</span>
                         </div>
                         {selectedProduct.originalPrice && (
-                          <div className="text-sm text-neutral-500 font-mono line-through">
+                          <div className="text-xs sm:text-sm text-neutral-500 font-mono line-through">
                             {selectedProduct.originalPrice.toLocaleString()} ر.س
                           </div>
                         )}
@@ -1109,11 +1145,11 @@ export default function App() {
                     </div>
                     <div>
                       {selectedProduct.stock > 0 ? (
-                        <span className="text-xs text-green-400 bg-green-500/10 px-3 py-1 rounded-full font-semibold">
-                          متوفر {selectedProduct.stock} قطعة في المستودع
+                        <span className="text-[11px] sm:text-xs text-green-400 bg-green-500/10 px-2.5 py-1 rounded-full font-semibold">
+                          متوفر {selectedProduct.stock} قطعة
                         </span>
                       ) : (
-                        <span className="text-xs text-rose-500 bg-rose-500/10 px-3 py-1 rounded-full font-semibold">
+                        <span className="text-[11px] sm:text-xs text-rose-500 bg-rose-500/10 px-2.5 py-1 rounded-full font-semibold">
                           نفذت الكمية حالياً
                         </span>
                       )}
@@ -1123,7 +1159,7 @@ export default function App() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setSelectedProduct(null)}
-                      className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-neutral-300 py-3 rounded-xl text-xs font-semibold cursor-pointer border border-neutral-800"
+                      className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-neutral-300 py-2.5 sm:py-3 rounded-xl text-xs font-semibold cursor-pointer border border-neutral-800"
                     >
                       عودة للمتجر
                     </button>
@@ -1133,7 +1169,7 @@ export default function App() {
                         setSelectedProduct(null);
                       }}
                       disabled={selectedProduct.stock === 0}
-                      className="flex-[2] bg-lime-400 hover:bg-lime-300 disabled:bg-neutral-800 disabled:text-neutral-500 text-black py-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-lime-400/10"
+                      className="flex-[2] bg-lime-400 hover:bg-lime-300 disabled:bg-neutral-800 disabled:text-neutral-500 text-black py-2.5 sm:py-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-lime-400/10"
                     >
                       <ShoppingBag className="w-4 h-4" />
                       <span>إضافة لسلة المشتريات</span>
@@ -1355,6 +1391,167 @@ export default function App() {
                       className="w-full bg-zinc-950 border border-neutral-800 focus:border-lime-400 rounded-xl px-3 py-2.5 text-xs text-white outline-none transition resize-none"
                     ></textarea>
                   </div>
+
+                  {/* PROMINENT TEST PAYMENT NOTICE */}
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 text-right space-y-1 my-2">
+                    <div className="flex items-center gap-2 text-amber-400 font-black text-xs">
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                      <span>تنبيه هائم: وضع الدفع التجريبي الافتراضي مفعّل (مجاني 100%)</span>
+                    </div>
+                    <p className="text-[11px] text-amber-200/90 leading-relaxed pr-6">
+                      ⚠️ <strong>ملاحظة هامة للمستخدم:</strong> هذه البطاقات وبوابات الدفع وهمية ومخصصة للاختبار فقط. <strong>لن يتم خصم أو سحب أي أموال حقيقية</strong> من بطاقتك أو حسابك البنكي نهائياً.
+                    </p>
+                  </div>
+
+                  {/* TEST PAYMENT METHOD SELECTOR */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-neutral-300">طريقة الدفع التجريبية (مجانية) *</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCheckoutInfo({...checkoutInfo, paymentMethod: "test_card"})}
+                        className={`p-2.5 rounded-xl border text-right transition flex flex-col items-center justify-center gap-1 cursor-pointer ${
+                          checkoutInfo.paymentMethod === "test_card"
+                            ? "bg-lime-400/10 border-lime-400 text-lime-400 shadow-md shadow-lime-400/10"
+                            : "bg-zinc-950 border-neutral-800 text-neutral-400 hover:border-neutral-700"
+                        }`}
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        <span className="text-[11px] font-bold">بطاقة وهمية</span>
+                        <span className="text-[9px] text-neutral-500">مدى / فيزا</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setCheckoutInfo({...checkoutInfo, paymentMethod: "test_applepay"})}
+                        className={`p-2.5 rounded-xl border text-right transition flex flex-col items-center justify-center gap-1 cursor-pointer ${
+                          checkoutInfo.paymentMethod === "test_applepay"
+                            ? "bg-lime-400/10 border-lime-400 text-lime-400 shadow-md shadow-lime-400/10"
+                            : "bg-zinc-950 border-neutral-800 text-neutral-400 hover:border-neutral-700"
+                        }`}
+                      >
+                        <Smartphone className="w-4 h-4" />
+                        <span className="text-[11px] font-bold">Apple Pay</span>
+                        <span className="text-[9px] text-neutral-500">تجريبي محاكى</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setCheckoutInfo({...checkoutInfo, paymentMethod: "test_stcpay"})}
+                        className={`p-2.5 rounded-xl border text-right transition flex flex-col items-center justify-center gap-1 cursor-pointer ${
+                          checkoutInfo.paymentMethod === "test_stcpay"
+                            ? "bg-lime-400/10 border-lime-400 text-lime-400 shadow-md shadow-lime-400/10"
+                            : "bg-zinc-950 border-neutral-800 text-neutral-400 hover:border-neutral-700"
+                        }`}
+                      >
+                        <Wallet className="w-4 h-4" />
+                        <span className="text-[11px] font-bold">STC Pay</span>
+                        <span className="text-[9px] text-neutral-500">تجريبي محاكى</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setCheckoutInfo({...checkoutInfo, paymentMethod: "test_bank"})}
+                        className={`p-2.5 rounded-xl border text-right transition flex flex-col items-center justify-center gap-1 cursor-pointer ${
+                          checkoutInfo.paymentMethod === "test_bank"
+                            ? "bg-lime-400/10 border-lime-400 text-lime-400 shadow-md shadow-lime-400/10"
+                            : "bg-zinc-950 border-neutral-800 text-neutral-400 hover:border-neutral-700"
+                        }`}
+                      >
+                        <Building2 className="w-4 h-4" />
+                        <span className="text-[11px] font-bold">تحويل بنكي</span>
+                        <span className="text-[9px] text-neutral-500">حساب وهمي</span>
+                      </button>
+                    </div>
+
+                    {/* DYNAMIC DETAILS FOR SELECTED METHOD */}
+                    {checkoutInfo.paymentMethod === "test_card" && (
+                      <div className="bg-zinc-950 border border-neutral-800 rounded-xl p-3 space-y-2 text-right">
+                        <div className="flex items-center justify-between text-xs text-neutral-300">
+                          <span className="font-bold flex items-center gap-1 text-lime-400">
+                            <CreditCard className="w-3.5 h-3.5" />
+                            بطاقة اختبار وهمية (مجهزة للاختبار)
+                          </span>
+                          <span className="bg-lime-400/10 text-lime-400 border border-lime-400/20 px-2 py-0.5 rounded-full text-[10px] font-extrabold">
+                            0.00 ر.س (مجاني)
+                          </span>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-[10px] text-neutral-400 mb-1">رقم البطاقة الافتراضي</label>
+                          <input
+                            type="text"
+                            value={checkoutInfo.cardNumber}
+                            onChange={(e) => setCheckoutInfo({...checkoutInfo, cardNumber: e.target.value})}
+                            placeholder="4000 0000 0000 0000"
+                            className="w-full bg-zinc-900 border border-neutral-800 focus:border-lime-400 rounded-lg px-3 py-1.5 text-xs font-mono text-white outline-none"
+                            dir="ltr"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] text-neutral-400 mb-1">الانتهاء</label>
+                            <input
+                              type="text"
+                              value={checkoutInfo.cardExpiry}
+                              onChange={(e) => setCheckoutInfo({...checkoutInfo, cardExpiry: e.target.value})}
+                              placeholder="12/28"
+                              className="w-full bg-zinc-900 border border-neutral-800 focus:border-lime-400 rounded-lg px-3 py-1.5 text-xs font-mono text-white outline-none text-center"
+                              dir="ltr"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] text-neutral-400 mb-1">CVC</label>
+                            <input
+                              type="text"
+                              value={checkoutInfo.cardCvc}
+                              onChange={(e) => setCheckoutInfo({...checkoutInfo, cardCvc: e.target.value})}
+                              placeholder="123"
+                              className="w-full bg-zinc-900 border border-neutral-800 focus:border-lime-400 rounded-lg px-3 py-2 text-xs font-mono text-white outline-none text-center"
+                              dir="ltr"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {checkoutInfo.paymentMethod === "test_applepay" && (
+                      <div className="bg-zinc-950 border border-neutral-800 rounded-xl p-3 text-center space-y-1">
+                        <div className="text-white text-xs font-bold flex items-center justify-center gap-1">
+                          <Smartphone className="w-4 h-4 text-lime-400" />
+                          <span> Pay التجريبي الافتراضي</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-400">
+                          سيتم قبول الطلب فوراً بشكل افتراضي لتجربة عملية الشراء مجاناً.
+                        </p>
+                      </div>
+                    )}
+
+                    {checkoutInfo.paymentMethod === "test_stcpay" && (
+                      <div className="bg-zinc-950 border border-neutral-800 rounded-xl p-3 text-center space-y-1">
+                        <div className="text-purple-400 text-xs font-bold flex items-center justify-center gap-1">
+                          <Wallet className="w-4 h-4" />
+                          <span>محاكي STC Pay السريع</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-400">
+                          دفع تجريبي فوري بدون سحب رصيد الحساب للاختبار السريع.
+                        </p>
+                      </div>
+                    )}
+
+                    {checkoutInfo.paymentMethod === "test_bank" && (
+                      <div className="bg-zinc-950 border border-neutral-800 rounded-xl p-3 text-right space-y-1 text-xs">
+                        <div className="text-lime-400 font-bold flex items-center gap-1">
+                          <Building2 className="w-4 h-4" />
+                          <span>الحساب البنكي التجريبي الافتراضي:</span>
+                        </div>
+                        <div className="text-neutral-300 font-mono text-[11px] dir-ltr text-left bg-zinc-900 p-2 rounded-lg border border-neutral-800">
+                          SA00 0000 0000 0000 0000 0000
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Checkout pricing details */}
@@ -1428,9 +1625,46 @@ export default function App() {
               </div>
 
               <div>
-                <h3 className="text-lg font-black text-white">تسجيل الدخول الآمن</h3>
-                <p className="text-xs text-neutral-400 mt-1">أدخل الاسم أو البريد الإلكتروني مع كلمة المرور لتفعيل نظام الفواتير وتتبع طرودك مباشرة.</p>
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                  <span>تسجيل الدخول المحصّن</span>
+                </h3>
+                <p className="text-xs text-neutral-400 mt-1">أدخل الاسم أو البريد الإلكتروني مع كلمة المرور لتفعيل نظام الفواتير وتتبع طرودك أو الوصول للوحة التحكم.</p>
               </div>
+
+              {/* SECURITY ALERTS & LOCKOUT COUNTDOWN */}
+              {lockoutRemainingSeconds > 0 && (
+                <div className="bg-rose-500/10 border-2 border-rose-500/30 rounded-2xl p-3 text-right space-y-1 animate-pulse">
+                  <div className="flex items-center gap-2 text-rose-400 font-black text-xs">
+                    <AlertOctagon className="w-4 h-4 shrink-0" />
+                    <span>تم حظر الوصول مؤقتاً لحماية اللوحة من الهجمات!</span>
+                  </div>
+                  <p className="text-[11px] text-rose-200 leading-relaxed pr-6">
+                    تم تجاوز الحد المسموح به للمحاولات الخاطئة (5 محاولات). سينتهي الحظر تلقائياً بعد:{" "}
+                    <span className="font-mono font-bold text-amber-300 underline dir-ltr inline-block">
+                      {Math.floor(lockoutRemainingSeconds / 60).toString().padStart(2, '0')}:{(lockoutRemainingSeconds % 60).toString().padStart(2, '0')}
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              {loginSecurityMsg && lockoutRemainingSeconds <= 0 && (
+                <div className={`p-3 rounded-2xl border text-xs text-right space-y-1 ${
+                  loginSecurityMsg.type === "error"
+                    ? "bg-rose-500/10 border-rose-500/30 text-rose-300"
+                    : "bg-amber-500/10 border-amber-500/30 text-amber-300"
+                }`}>
+                  <div className="flex items-center gap-2 font-bold">
+                    <ShieldAlert className="w-4 h-4 shrink-0" />
+                    <span>تنبيه أمني: {loginSecurityMsg.text}</span>
+                  </div>
+                  {loginSecurityMsg.remainingAttempts !== undefined && (
+                    <p className="text-[10px] text-amber-200/90 pr-6">
+                      تحذير: بعد استنفاد {loginSecurityMsg.remainingAttempts} محاولات، سيتم إغلاق الوصول لمدة 5 دقائق تلقائياً.
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-3">
                 <div>
@@ -1438,10 +1672,14 @@ export default function App() {
                   <input
                     type="text"
                     required
+                    disabled={lockoutRemainingSeconds > 0 || isAuthenticatingAdmin}
                     value={loginForm.email}
-                    onChange={(e) => setLoginForm({ name: "", email: e.target.value })}
+                    onChange={(e) => {
+                      setLoginForm({ name: "", email: e.target.value });
+                      setLoginSecurityMsg(null);
+                    }}
                     placeholder="الاسم الكامل أو البريد الإلكتروني"
-                    className="w-full bg-zinc-900 border border-neutral-800 focus:border-lime-400 rounded-xl px-3 py-2 text-xs text-white outline-none transition text-right"
+                    className="w-full bg-zinc-900 border border-neutral-800 focus:border-lime-400 rounded-xl px-3 py-2 text-xs text-white outline-none transition text-right disabled:opacity-50"
                   />
                 </div>
 
@@ -1449,10 +1687,14 @@ export default function App() {
                   <label className="block text-[10px] font-bold text-neutral-400 mb-1">كلمة المرور</label>
                   <input
                     type="password"
+                    disabled={lockoutRemainingSeconds > 0 || isAuthenticatingAdmin}
                     value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
+                    onChange={(e) => {
+                      setLoginPassword(e.target.value);
+                      setLoginSecurityMsg(null);
+                    }}
                     placeholder="••••••••"
-                    className="w-full bg-zinc-900 border border-neutral-800 focus:border-lime-400 rounded-xl px-3 py-2 text-xs text-white outline-none transition text-left"
+                    className="w-full bg-zinc-900 border border-neutral-800 focus:border-lime-400 rounded-xl px-3 py-2 text-xs text-white outline-none transition text-left disabled:opacity-50 font-mono"
                     dir="ltr"
                   />
                 </div>
@@ -1460,7 +1702,8 @@ export default function App() {
 
               <button
                 type="button"
-                onClick={() => {
+                disabled={lockoutRemainingSeconds > 0 || isAuthenticatingAdmin}
+                onClick={async () => {
                   const inputVal = loginForm.email.trim();
                   if (!inputVal) {
                     alert("الرجاء إدخال الاسم أو البريد الإلكتروني");
@@ -1468,49 +1711,116 @@ export default function App() {
                   }
                   
                   const currentOwnerEmail = (localStorage.getItem("techcore_owner_email") || "amine879mohamed@gmail.com").trim().toLowerCase();
-                  const currentOwnerPassword = (localStorage.getItem("techcore_owner_password") || "admin123").trim();
-                  
                   const isOwnerEmail = inputVal.toLowerCase() === currentOwnerEmail;
-                  if (isOwnerEmail) {
-                    if (loginPassword.trim() !== currentOwnerPassword && loginPassword.trim() !== "techcore2026") {
-                      alert("خطأ: كلمة المرور الخاصة بحساب الإدارة غير صحيحة!");
-                      return;
-                    }
-                  }
-
-                  let emailVal = "";
-                  let nameVal = "";
-
-                  if (inputVal.includes("@")) {
-                    emailVal = inputVal;
-                    nameVal = inputVal.split("@")[0];
-                  } else {
-                    nameVal = inputVal;
-                    const slug = encodeURIComponent(inputVal.replace(/\s+/g, "_"));
-                    emailVal = `${slug}@customer.techcore`;
-                  }
-
-                  const userObj = { 
-                    name: nameVal, 
-                    email: emailVal,
-                    isOwner: isOwnerEmail
-                  };
-                  localStorage.setItem("techcore_customer", JSON.stringify(userObj));
-                  setCustomerUser(userObj);
-                  setIsLoginOpen(false);
-                  setLoginPassword("");
                   
                   if (isOwnerEmail) {
-                    triggerToast(`مرحباً بك يا مدير النظام! تم تفعيل لوحة التحكم الخاصة بك.`);
-                    setIsAdminMode(true);
+                    setIsAuthenticatingAdmin(true);
+                    setLoginSecurityMsg(null);
+                    try {
+                      const res = await fetch(`${API_BASE_URL}/api/admin/login`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email: inputVal, password: loginPassword })
+                      });
+                      
+                      const data = await res.json();
+
+                      if (res.status === 429 || data.lockedOut) {
+                        const secs = data.remainingSeconds || 300;
+                        setLockoutRemainingSeconds(secs);
+                        setLoginSecurityMsg({
+                          type: "error",
+                          text: data.error || `تم حظر محاولات الدخول لحماية النظام من الهجمات!`
+                        });
+                        return;
+                      }
+
+                      if (!res.ok || !data.success) {
+                        const rem = data.remainingAttempts ?? 3;
+                        setLoginSecurityMsg({
+                          type: "warning",
+                          text: data.error || `كلمة المرور غير صحيحة!`,
+                          remainingAttempts: rem
+                        });
+                        return;
+                      }
+
+                      // Successful authentication!
+                      const userObj = { 
+                        name: "مدير النظام الفاخر", 
+                        email: currentOwnerEmail,
+                        isOwner: true
+                      };
+                      localStorage.setItem("techcore_customer", JSON.stringify(userObj));
+                      setCustomerUser(userObj);
+                      setIsLoginOpen(false);
+                      setLoginPassword("");
+                      setLoginSecurityMsg(null);
+                      triggerToast(`مرحباً بك يا مدير النظام! تم تفعيل لوحة التحكم المحصنة بنجاح.`);
+                      setIsAdminMode(true);
+                    } catch (err) {
+                      console.error("Admin authentication offline fallback:", err);
+                      const currentOwnerPassword = (localStorage.getItem("techcore_owner_password") || "admin123").trim();
+                      if (loginPassword.trim() !== currentOwnerPassword && loginPassword.trim() !== "techcore2026") {
+                        setLoginSecurityMsg({
+                          type: "warning",
+                          text: "كلمة المرور الخاصة بالإدارة غير صحيحة!"
+                        });
+                        return;
+                      }
+
+                      const userObj = { name: "مدير النظام الفاخر", email: currentOwnerEmail, isOwner: true };
+                      localStorage.setItem("techcore_customer", JSON.stringify(userObj));
+                      setCustomerUser(userObj);
+                      setIsLoginOpen(false);
+                      setLoginPassword("");
+                      setIsAdminMode(true);
+                    } finally {
+                      setIsAuthenticatingAdmin(false);
+                    }
                   } else {
+                    let emailVal = "";
+                    let nameVal = "";
+
+                    if (inputVal.includes("@")) {
+                      emailVal = inputVal;
+                      nameVal = inputVal.split("@")[0];
+                    } else {
+                      nameVal = inputVal;
+                      const slug = encodeURIComponent(inputVal.replace(/\s+/g, "_"));
+                      emailVal = `${slug}@customer.techcore`;
+                    }
+
+                    const userObj = { 
+                      name: nameVal, 
+                      email: emailVal,
+                      isOwner: false
+                    };
+                    localStorage.setItem("techcore_customer", JSON.stringify(userObj));
+                    setCustomerUser(userObj);
+                    setIsLoginOpen(false);
+                    setLoginPassword("");
                     triggerToast(`أهلاً بك ${nameVal}، تم تسجيل دخولك وتفعيل الفواتير!`);
                   }
                 }}
-                className="w-full bg-lime-400 hover:bg-lime-300 text-black py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-lime-400/10"
+                className={`w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 shadow-lg ${
+                  lockoutRemainingSeconds > 0
+                    ? "bg-neutral-800 text-neutral-500 cursor-not-allowed"
+                    : "bg-lime-400 hover:bg-lime-300 text-black shadow-lime-400/10"
+                }`}
               >
-                <Lock className="w-4 h-4" />
-                <span>تسجيل الدخول والتفعيل الفوري</span>
+                {isAuthenticatingAdmin ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Lock className="w-4 h-4" />
+                )}
+                <span>
+                  {lockoutRemainingSeconds > 0
+                    ? `محظور (${lockoutRemainingSeconds}ث)`
+                    : isAuthenticatingAdmin
+                    ? "جاري التحقق والتشفير..."
+                    : "تسجيل الدخول والتفعيل الفوري"}
+                </span>
               </button>
 
               <div className="bg-zinc-900/40 p-2.5 rounded-xl border border-white/5 text-[9px] text-neutral-500 leading-relaxed text-center">

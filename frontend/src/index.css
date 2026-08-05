@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* Section-Specific CSS Styling Imports */
+@import "./styles/mobile-layout.css";
+@import "./styles/header.css";
+@import "./styles/product-grid.css";
+@import "./styles/cart.css";
+@import "./styles/checkout.css";
+@import "./styles/admin.css";
+
 @layer utilities {
   .glass-panel {
     background: rgba(0, 0, 0, 0.85);
