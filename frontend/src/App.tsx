@@ -570,6 +570,7 @@ export default function App() {
               const heroImgUrl = currentHero.customImageUrl || heroLinkedProduct?.image || "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80";
               const heroDisplayPrice = currentHero.customPrice !== undefined ? currentHero.customPrice : (heroLinkedProduct?.price || 8499);
               const heroCardSubtext = currentHero.customBadgeSubtext || heroLinkedProduct?.categoryAr || "الإصدار المطور";
+             
               return (
                 <section className="glass-panel rounded-3xl overflow-hidden relative border-l-4 border-lime-400 p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl" id="hero-banner">
                   <div className="space-y-4 max-w-xl text-right md:order-1">
