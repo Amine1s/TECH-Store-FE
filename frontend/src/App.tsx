@@ -63,7 +63,7 @@ export default function App() {
         console.error("Failed to parse stored hero settings", e);
       }
     }
-    return defaultHeroSettings:
+    return defaultHeroSettings;
   });
   // Cart state
   const [cart, setCart] = useState<{ product: Product; quantity: number; selectedVariants?: Record<string, string> }[]>([]);
