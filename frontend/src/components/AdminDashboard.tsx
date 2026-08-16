@@ -614,7 +614,7 @@ export function AdminDashboard({
       {activeTab === "hero" && (
         <AdminHeroBannerTab
           products={products}
-          heroSettings={safeHero}
+          heroSettings={heroSettings || defaultHeroSettings}
           onSaveHeroSettings={onSaveHeroSettings || (() => {})}
           setFormSuccess={setFormSuccess}
         />
