@@ -53,7 +53,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("featured");
-  const [heroSettings, setHeroSettings] = useState<HeroSettings>(() => {
+  const [HeroSettings, setHeroSettings] = useState<HeroSettings>(() => {
     const stored = localStorage.getItem("techcore_hero_settings");
     if (stored) {
       try {
@@ -457,7 +457,7 @@ export default function App() {
   const totalCartItems = cart.reduce((acc, curr) => acc + curr.quantity, 0);
   const totalCartPrice = cart.reduce((acc, curr) => acc + (curr.product.price * curr.quantity), 0);
 // Active Hero banner computed values (cleanly declared in top level scope)
-  const currentHero = (heroSettings && heroSettings.title) ? heroSettings : defaultHeroSettings;
+  const currentHero = (HeroSettings && HeroSettings.title) ? HeroSettings : defaultHeroSettings;
   const heroLinkedProduct = products.find(p => p.id === currentHero.productId) || products.find(p => p.id === 'c-3') || (products.length > 0 ? products[0] : null);
   const heroImgUrl = currentHero.customImageUrl || heroLinkedProduct?.image || "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80";
   const heroDisplayPrice = currentHero.customPrice !== undefined ? currentHero.customPrice : (heroLinkedProduct?.price || 8499);
