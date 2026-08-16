@@ -445,6 +445,12 @@ export default function App() {
   // Math totals
   const totalCartItems = cart.reduce((acc, curr) => acc + curr.quantity, 0);
   const totalCartPrice = cart.reduce((acc, curr) => acc + (curr.product.price * curr.quantity), 0);
+// Active Hero banner computed values (cleanly declared in top level scope)
+  const currentHero = (heroSettings && heroSettings.title) ? heroSettings : defaultHeroSettings;
+  const heroLinkedProduct = products.find(p => p.id === currentHero.productId) || products.find(p => p.id === 'c-3') || (products.length > 0 ? products[0] : null);
+  const heroImgUrl = currentHero.customImageUrl || heroLinkedProduct?.image || "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80";
+  const heroDisplayPrice = currentHero.customPrice !== undefined ? currentHero.customPrice : (heroLinkedProduct?.price || 8499);
+  const heroCardSubtext = currentHero.customBadgeSubtext || heroLinkedProduct?.categoryAr || "الإصدار المطور";
 
   return (
     <div className="min-h-screen text-white relative overflow-x-hidden font-sans px-3.5 py-3 sm:px-6 sm:py-6 pb-24 sm:pb-16 selection:bg-lime-400 selection:text-black app-layout-wrapper" dir="rtl">
@@ -564,16 +570,8 @@ export default function App() {
         ) : (
           <>
             {/* 3. Hero Showcase Banner */}
-        {(() => {
-             const currentHero = (heroSettings && heroSettings.title) ? heroSettings : defaultHeroSettings;
-              const heroLinkedProduct = products.find(p => p.id === currentHero.productId) || products.find(p => p.id === 'c-3') || (products.length > 0 ? products[0] : null);
-              const heroImgUrl = currentHero.customImageUrl || heroLinkedProduct?.image || "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80";
-              const heroDisplayPrice = currentHero.customPrice !== undefined ? currentHero.customPrice : (heroLinkedProduct?.price || 8499);
-              const heroCardSubtext = currentHero.customBadgeSubtext || heroLinkedProduct?.categoryAr || "الإصدار المطور";
-             
-              return (
-                <section className="glass-panel rounded-3xl overflow-hidden relative border-l-4 border-lime-400 p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl" id="hero-banner">
-                  <div className="space-y-4 max-w-xl text-right md:order-1">
+         <section className="glass-panel rounded-3xl overflow-hidden relative border-l-4 border-lime-400 p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl" id="hero-banner">
+              <div className="space-y-4 max-w-xl text-right md:order-1">
                     <span className="inline-flex items-center gap-1.5 text-xs font-black tracking-widest text-purple-400 bg-purple-950/50 px-3 py-1 rounded-full border border-purple-500/20">
                       <Zap className="w-3.5 h-3.5 text-lime-400" />
                       {heroSettings.badge || "عرض الأسبوع الحصري"}
@@ -628,8 +626,6 @@ export default function App() {
                     </div>
                   </div>
                 </section>
-              );
-            })()}
 
         {/* Categories Banner Quick Cards */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4" id="categories-grid-quick">
