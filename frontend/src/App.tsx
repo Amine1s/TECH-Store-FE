@@ -565,8 +565,8 @@ export default function App() {
           <>
             {/* 3. Hero Showcase Banner */}
         {(() => {
-              const currentHero = heroSettings || defaultHeroSettings;
-              const heroLinkedProduct = products.find(p => p.id === currentHero.productId) || products.find(p => p.id === 'c-3') || products[0];
+             const currentHero = (heroSettings && heroSettings.title) ? heroSettings : defaultHeroSettings;
+              const heroLinkedProduct = products.find(p => p.id === currentHero.productId) || products.find(p => p.id === 'c-3') || (products.length > 0 ? products[0] : null);
               const heroImgUrl = currentHero.customImageUrl || heroLinkedProduct?.image || "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80";
               const heroDisplayPrice = currentHero.customPrice !== undefined ? currentHero.customPrice : (heroLinkedProduct?.price || 8499);
               const heroCardSubtext = currentHero.customBadgeSubtext || heroLinkedProduct?.categoryAr || "الإصدار المطور";
