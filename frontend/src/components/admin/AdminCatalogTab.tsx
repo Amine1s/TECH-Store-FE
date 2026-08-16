@@ -9,6 +9,8 @@ import {
   Trash2,
   ChevronRight,
   ChevronLeft,
+  Sparkles,
+  Zap
 } from "lucide-react";
 import { Product } from "../../data/products";
 
@@ -27,6 +29,8 @@ interface AdminCatalogTabProps {
   setConfirmDeleteId: (val: string | null) => void;
   onConfirmDelete: () => void;
   resetForm: () => void;
+  heroProductId?: string;
+  onSetAsHeroProduct?: (product: Product) => void;
 }
 
 export function AdminCatalogTab({
@@ -44,6 +48,8 @@ export function AdminCatalogTab({
   setConfirmDeleteId,
   onConfirmDelete,
   resetForm,
+  heroProductId,
+  onSetAsHeroProduct,
 }: AdminCatalogTabProps) {
   // Calculations
   const totalProducts = products.length;
@@ -313,7 +319,13 @@ export function AdminCatalogTab({
 
                     {/* Status Tags */}
                     <td className="p-4">
-                      <div className="flex flex-col gap-1">
+                       <div className="flex flex-col gap-1">
+                        {heroProductId === product.id && (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-black text-black bg-lime-400 border border-lime-400 px-2 py-0.5 rounded-full w-max shadow-sm shadow-lime-400/20 animate-pulse">
+                            <Sparkles className="w-2.5 h-2.5 fill-black text-black" />
+                            منتج الهيرو الرئيسي
+                          </span>
+                        )}
                         {product.featured && (
                           <span className="inline-flex items-center gap-1 text-[9px] font-bold text-purple-400 bg-purple-950/40 border border-purple-500/20 px-2 py-0.5 rounded w-max">
                             مميز نجمة
@@ -328,6 +340,21 @@ export function AdminCatalogTab({
                     {/* Actions */}
                     <td className="p-4">
                       <div className="flex items-center justify-center gap-2">
+                        {onSetAsHeroProduct && (
+                          <button
+                            type="button"
+                            onClick={() => onSetAsHeroProduct(product)}
+                            className={`p-2 border rounded-lg transition cursor-pointer flex items-center gap-1 text-[10px] font-bold ${
+                              heroProductId === product.id
+                                ? "bg-lime-400/20 border-lime-400 text-lime-400"
+                                : "bg-zinc-900 hover:bg-lime-400 hover:text-black border-neutral-800 text-neutral-400"
+                            }`}
+                            title="تعيين هذا المنتج كبطل الواجهة (Hero Banner)"
+                          >
+                            <Zap className="w-3.5 h-3.5" />
+                            <span className="hidden xl:inline">{heroProductId === product.id ? "في الهيرو" : "تعيين للهيرو"}</span>
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => onOpenEditForm(product)}
