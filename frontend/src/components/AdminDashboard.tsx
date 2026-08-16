@@ -348,6 +348,8 @@ export function AdminDashboard({
     }
   };
 
+  const safeHero = heroSettings || defaultHeroSettings;
+
   return (
     <div
       className="glass-panel rounded-3xl border border-white/5 p-4 lg:p-8 space-y-6 text-right relative overflow-hidden shadow-2xl animate-fade-in"
@@ -512,6 +514,7 @@ export function AdminDashboard({
         />
       )}
 
+
       {activeTab === "list" && (
         <AdminCatalogTab
           products={products}
@@ -528,11 +531,11 @@ export function AdminDashboard({
           setConfirmDeleteId={setConfirmDeleteId}
           onConfirmDelete={handleConfirmDelete}
           resetForm={resetForm}
-          heroProductId={heroSettings.productId}
+          heroProductId={safeHero.productId}
           onSetAsHeroProduct={(product) => {
             if (onSaveHeroSettings) {
               const updated = {
-                ...heroSettings,
+                ...safeHero,
                 productId: product.id,
                 title: product.name.split(" ").slice(0, 4).join(" ") || product.name,
                 titleHighlight: product.name.split(" ").slice(4).join(" ") || "الإصدار الأحدث",
@@ -548,7 +551,6 @@ export function AdminDashboard({
           }}
         />
       )}
-
       {activeTab === "form" && (
         <AdminProductFormTab
           onSubmit={handleSubmit}
@@ -612,7 +614,7 @@ export function AdminDashboard({
       {activeTab === "hero" && (
         <AdminHeroBannerTab
           products={products}
-          heroSettings={heroSettings}
+          heroSettings={safeHero}
           onSaveHeroSettings={onSaveHeroSettings || (() => {})}
           setFormSuccess={setFormSuccess}
         />
