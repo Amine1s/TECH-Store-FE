@@ -7,14 +7,16 @@ import {
   Activity,
   CheckCircle,
   AlertTriangle,
+  Sparkles,
+  ShieldCheck,
 } from "lucide-react";
-import { Product } from "../data/products";
+import { Product, HeroSettings, defaultHeroSettings } from "../data/products";
 import { AdminAnalyticsTab } from "./admin/AdminAnalyticsTab";
 import { AdminCatalogTab } from "./admin/AdminCatalogTab";
 import { AdminProductFormTab } from "./admin/AdminProductFormTab";
 import { AdminOrdersTab } from "./admin/AdminOrdersTab";
 import { AdminSecurityTab } from "./admin/AdminSecurityTab";
-import { ShieldCheck } from "lucide-react";
+import { AdminHeroBannerTab } from "./admin/AdminHeroBannerTab";
 
 interface AdminDashboardProps {
   products: Product[];
@@ -22,6 +24,8 @@ interface AdminDashboardProps {
   onEditProduct: (product: Product) => void;
   onDeleteProduct: (productId: string) => void;
   onClose: () => void;
+  heroSettings?: HeroSettings;
+  onSaveHeroSettings?: (settings: HeroSettings) => void;
 }
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
@@ -32,6 +36,8 @@ export function AdminDashboard({
   onEditProduct,
   onDeleteProduct,
   onClose,
+  heroSettings = defaultHeroSettings,
+  onSaveHeroSettings,
 }: AdminDashboardProps) {
   // Navigation & Search States
   const [activeTab, setActiveTab] = useState<"analytics" | "list" | "form" | "orders" | "security">("analytics");
@@ -442,7 +448,21 @@ export function AdminDashboard({
             </span>
           )}
         </button>
-
+        
+        <button
+          type="button"
+          onClick={() => setActiveTab("hero")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer border ${
+            activeTab === "hero"
+              ? "bg-purple-400 text-black border-purple-400 shadow-lg shadow-purple-400/20"
+              : "bg-neutral-950/40 text-neutral-400 border-neutral-800 hover:text-white hover:bg-neutral-900"
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-purple-400" />
+          <span>تخصيص الهيرو والبانر الرئيسي</span>
+          <span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse"></span>
+        </button>
+        
         <button
           type="button"
           onClick={() => setActiveTab("security")}
@@ -508,6 +528,24 @@ export function AdminDashboard({
           setConfirmDeleteId={setConfirmDeleteId}
           onConfirmDelete={handleConfirmDelete}
           resetForm={resetForm}
+          heroProductId={heroSettings.productId}
+          onSetAsHeroProduct={(product) => {
+            if (onSaveHeroSettings) {
+              const updated = {
+                ...heroSettings,
+                productId: product.id,
+                title: product.name.split(" ").slice(0, 4).join(" ") || product.name,
+                titleHighlight: product.name.split(" ").slice(4).join(" ") || "الإصدار الأحدث",
+                description: product.description,
+                customImageUrl: product.image,
+                customPrice: product.price,
+                stockNotice: product.stock > 0 ? `متوفر ${product.stock} قطعة فقط بالمستودع` : "الكمية محدودة جداً",
+                customBadgeSubtext: product.categoryAr || "الإصدار المطور",
+              };
+              onSaveHeroSettings(updated);
+              setFormSuccess(`تم تعيين "${product.name}" كبطل الواجهة (Hero Section) بنجاح!`);
+            }
+          }}
         />
       )}
 
@@ -570,6 +608,16 @@ export function AdminDashboard({
       )}
 
       {activeTab === "security" && <AdminSecurityTab />}
+
+      {activeTab === "hero" && (
+        <AdminHeroBannerTab
+          products={products}
+          heroSettings={heroSettings}
+          onSaveHeroSettings={onSaveHeroSettings || (() => {})}
+          setFormSuccess={setFormSuccess}
+        />
+      )}
+      
     </div>
   );
 }
