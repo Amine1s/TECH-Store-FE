@@ -256,12 +256,13 @@ export default function App() {
     localStorage.setItem("techcore_products", JSON.stringify(all));
   }, []);
 
-  // Fetch Hero Banner Settings from backend on load
+// Fetch Hero Banner Settings from backend on load
   useEffect(() => {
     const fetchHeroSettings = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/api/hero-settings`);
-        if (res.ok) {
+        const contentType = res.headers.get("content-type");
+        if (res.ok && contentType && contentType.includes("application/json")) {
           const data = await res.json();
           if (data && data.title) {
             setHeroSettings(data);
@@ -269,17 +270,11 @@ export default function App() {
           }
         }
       } catch (err) {
-        console.error("Error fetching hero settings:", err);
+        console.warn("Could not fetch remote hero settings, using cached/default settings:", err);
       }
     };
     fetchHeroSettings();
   }, []);
-
-  const handleSaveHeroSettings = (newSettings: HeroSettings) => {
-    setHeroSettings(newSettings);
-    localStorage.setItem("techcore_hero_settings", JSON.stringify(newSettings));
-    triggerToast("تم تحديث إعدادات ومنتج الهيرو سيكشن بنجاح!");
-  };
 
   // Admin Callbacks
   const handleAddProduct = (newProduct: Product) => {
