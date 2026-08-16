@@ -26,21 +26,21 @@ const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 
 export function AdminHeroBannerTab({
   products,
-  heroSettings,
+  heroSettings = defaultHeroSettings,
   onSaveHeroSettings,
   setFormSuccess,
 }: AdminHeroBannerTabProps) {
-  const [formData, setFormData] = useState<HeroSettings>(heroSettings);
+  const [formData, setFormData] = useState<HeroSettings>(heroSettings || defaultHeroSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [productSearch, setProductSearch] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
 
   useEffect(() => {
-    setFormData(heroSettings);
+    setFormData(heroSettings || defaultHeroSettings);
   }, [heroSettings]);
 
   // Selected product object
-  const currentLinkedProduct = products.find((p) => p.id === formData.productId) || products[0];
+  const currentLinkedProduct = products.find((p) => p.id === (formData?.productId || "c-3")) || products[0];
 
   // Autofill fields from a selected product
   const handleSelectAndAutofill = (product: Product) => {
