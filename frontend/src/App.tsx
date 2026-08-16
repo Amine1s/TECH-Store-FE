@@ -53,7 +53,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("featured");
-  const [HeroSettings, setHeroSettings] = useState<HeroSettings>(() => {
+ const [HeroSettings, setHeroSettings] = useState<HeroSettings>(() => {
     const stored = localStorage.getItem("techcore_hero_settings");
     if (stored) {
       try {
@@ -63,7 +63,7 @@ export default function App() {
         console.error("Failed to parse stored hero settings", e);
       }
     }
-    return defaultHeroSettings;
+    return defaultHeroSettings:
   });
   // Cart state
   const [cart, setCart] = useState<{ product: Product; quantity: number; selectedVariants?: Record<string, string> }[]>([]);
@@ -287,6 +287,21 @@ export default function App() {
     fetchHeroSettings();
   }, []);
 
+const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
+    setHeroSettings(newSettings);
+    localStorage.setItem("techcore_hero_settings", JSON.stringify(newSettings));
+    try {
+      await fetch(`${API_BASE_URL}/api/hero-settings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newSettings),
+      });
+    } catch (err) {
+      console.error("Failed to sync hero settings with server:", err);
+    }
+    triggerToast("تم تحديث وحفظ إعدادات واجهة الهيرو بنجاح!");
+  };
+  
   // Admin Callbacks
   const handleAddProduct = (newProduct: Product) => {
     const updated = [newProduct, ...products];
@@ -575,7 +590,7 @@ export default function App() {
             onEditProduct={handleEditProduct}
             onDeleteProduct={handleDeleteProduct}
             onClose={() => setIsAdminMode(false)}
-            heroSettings={heroSettings}
+            heroSettings={HeroSettings}
             onSaveHeroSettings={handleSaveHeroSettings}
           />
         ) : (
@@ -585,14 +600,14 @@ export default function App() {
                  <div className="space-y-4 max-w-xl text-right md:order-1">
                    <span className="inline-flex items-center gap-1.5 text-xs font-black tracking-widest text-purple-400 bg-purple-950/50 px-3 py-1 rounded-full border border-purple-500/20">
                     <Zap className="w-3.5 h-3.5 text-lime-400" />
-                {heroSettings?.badge || "عرض الأسبوع الحصري"}
+                {HeroSettings?.badge || "عرض الأسبوع الحصري"}
                    </span>
                 <h2 className="text-3xl md:text-5xl font-black leading-tight text-white">
-                  {heroSettings?.title || "جيل جديد من الحواسيب الخارقة"}{" "}
-                     <span className="text-lime-400">{heroSettings?.titleHighlight || "Pro-X الجيل العاشر"}</span>
+                  {HeroSettings?.title || "جيل جديد من الحواسيب الخارقة"}{" "}
+                     <span className="text-lime-400">{HeroSettings?.titleHighlight || "Pro-X الجيل العاشر"}</span>
                      </h2>
                         <p className="text-neutral-300 text-xs md:text-sm leading-relaxed">
-                       {heroSettings?.description || "تغلب على الحدود الرقمية مع معالجات ثنائية النواة ونظام تبريد مائي مغلق. صمم خصيصاً للمبرمجين واللاعبين المحترفين الذين يطلبون الفخامة والسرعة الفائقة مع تشفير حماية متقدم."}
+                       {HeroSettings?.description || "تغلب على الحدود الرقمية مع معالجات ثنائية النواة ونظام تبريد مائي مغلق. صمم خصيصاً للمبرمجين واللاعبين المحترفين الذين يطلبون الفخامة والسرعة الفائقة مع تشفير حماية متقدم."}
                         </p>
                     
                     <div className="flex flex-wrap gap-3 items-center pt-2">
@@ -602,11 +617,11 @@ export default function App() {
                         }}
                         className="bg-lime-400 hover:bg-lime-300 text-black px-6 py-2.5 rounded-xl font-bold text-xs transition-all duration-300 shadow-lg shadow-lime-400/20 cursor-pointer"
                       >
-                        {heroSettings.buttonText || "اكتشف المواصفات"}
+                        {HeroSettings.buttonText || "اكتشف المواصفات"}
                       </button>
                       <div className="flex items-center gap-2 text-xs text-neutral-400">
                         <span className="w-2 h-2 rounded-full bg-lime-400 animate-ping"></span>
-                        <span>{heroSettings.stockNotice || "متوفر 12 قطعة فقط بالمستودع"}</span>
+                        <span>{HeroSettings.stockNotice || "متوفر 12 قطعة فقط بالمستودع"}</span>
                       </div>
                     </div>
                   </div>
@@ -621,13 +636,13 @@ export default function App() {
                     >
                       <img 
                         src={heroImgUrl} 
-                        alt={heroSettings.titleHighlight || heroLinkedProduct?.name || "منتج الهيرو"} 
+                        alt={HeroSettings.titleHighlight || heroLinkedProduct?.name || "منتج الهيرو"} 
                         className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black via-black/60 to-transparent p-4 flex justify-between items-end">
                         <div>
                           <div className="text-[10px] text-lime-400 font-bold uppercase tracking-wider">{heroCardSubtext}</div>
-                          <div className="text-white text-xs font-bold truncate max-w-[150px]">{heroLinkedProduct?.name || heroSettings.titleHighlight}</div>
+                          <div className="text-white text-xs font-bold truncate max-w-[150px]">{heroLinkedProduct?.name || HeroSettings.titleHighlight}</div>
                         </div>
                         <div className="text-right">
                           <div className="text-[9px] text-neutral-300 uppercase">سعر تنافسي</div>
