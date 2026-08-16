@@ -595,63 +595,63 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
           />
         ) : (
           <>
-                      {/* 3. Hero Showcase Banner */}
-                       <section className="glass-panel rounded-3xl overflow-hidden relative border-l-4 border-lime-400 p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl" id="hero-banner">
-                 <div className="space-y-4 max-w-xl text-right md:order-1">
-                   <span className="inline-flex items-center gap-1.5 text-xs font-black tracking-widest text-purple-400 bg-purple-950/50 px-3 py-1 rounded-full border border-purple-500/20">
-                    <Zap className="w-3.5 h-3.5 text-lime-400" />
-                {HeroSettings?.badge || "عرض الأسبوع الحصري"}
-                   </span>
+                     {/* 3. Dynamic Hero Showcase Banner */}
+            <section className="glass-panel rounded-3xl overflow-hidden relative border-l-4 border-lime-400 p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl" id="hero-banner">
+              <div className="space-y-4 max-w-xl text-right md:order-1">
+                <span className="inline-flex items-center gap-1.5 text-xs font-black tracking-widest text-purple-400 bg-purple-950/50 px-3 py-1 rounded-full border border-purple-500/20">
+                  <Zap className="w-3.5 h-3.5 text-lime-400" />
+                  {currentHero.badge || "عرض الأسبوع الحصري"}
+                </span>
                 <h2 className="text-3xl md:text-5xl font-black leading-tight text-white">
-                  {HeroSettings?.title || "جيل جديد من الحواسيب الخارقة"}{" "}
-                     <span className="text-lime-400">{HeroSettings?.titleHighlight || "Pro-X الجيل العاشر"}</span>
-                     </h2>
-                        <p className="text-neutral-300 text-xs md:text-sm leading-relaxed">
-                       {HeroSettings?.description || "تغلب على الحدود الرقمية مع معالجات ثنائية النواة ونظام تبريد مائي مغلق. صمم خصيصاً للمبرمجين واللاعبين المحترفين الذين يطلبون الفخامة والسرعة الفائقة مع تشفير حماية متقدم."}
-                        </p>
-                    
-                    <div className="flex flex-wrap gap-3 items-center pt-2">
-                      <button 
-                        onClick={() => {
-                          if (heroLinkedProduct) handleSelectProduct(heroLinkedProduct);
-                        }}
-                        className="bg-lime-400 hover:bg-lime-300 text-black px-6 py-2.5 rounded-xl font-bold text-xs transition-all duration-300 shadow-lg shadow-lime-400/20 cursor-pointer"
-                      >
-                        {HeroSettings.buttonText || "اكتشف المواصفات"}
-                      </button>
-                      <div className="flex items-center gap-2 text-xs text-neutral-400">
-                        <span className="w-2 h-2 rounded-full bg-lime-400 animate-ping"></span>
-                        <span>{HeroSettings.stockNotice || "متوفر 12 قطعة فقط بالمستودع"}</span>
-                      </div>
-                    </div>
+                  {currentHero.title || "جيل جديد من الحواسيب الخارقة"}{" "}
+                  <span className="text-lime-400">{currentHero.titleHighlight || "Pro-X الجيل العاشر"}</span>
+                </h2>
+                <p className="text-neutral-300 text-xs md:text-sm leading-relaxed">
+                  {currentHero.description || "تغلب على الحدود الرقمية مع معالجات ثنائية النواة ونظام تبريد مائي مغلق. صمم خصيصاً للمبرمجين واللاعبين المحترفين الذين يطلبون الفخامة والسرعة الفائقة مع تشفير حماية متقدم."}
+                </p>
+                
+                <div className="flex flex-wrap gap-3 items-center pt-2">
+                  <button 
+                    onClick={() => {
+                      if (heroLinkedProduct) handleSelectProduct(heroLinkedProduct);
+                    }}
+                    className="bg-lime-400 hover:bg-lime-300 text-black px-6 py-2.5 rounded-xl font-bold text-xs transition-all duration-300 shadow-lg shadow-lime-400/20 cursor-pointer"
+                  >
+                    {currentHero.buttonText || "اكتشف المواصفات"}
+                  </button>
+                  <div className="flex items-center gap-2 text-xs text-neutral-400">
+                    <span className="w-2 h-2 rounded-full bg-lime-400 animate-ping"></span>
+                    <span>{currentHero.stockNotice || "متوفر 12 قطعة فقط بالمستودع"}</span>
                   </div>
+                </div>
+              </div>
 
-                  <div className="w-full md:w-80 flex-shrink-0 flex items-center justify-center relative md:order-2">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/20 to-lime-500/10 blur-3xl -z-10 rounded-full"></div>
-                    <div 
-                      onClick={() => {
-                        if (heroLinkedProduct) handleSelectProduct(heroLinkedProduct);
-                      }}
-                      className="w-64 h-48 md:w-80 md:h-60 bg-zinc-950 border border-neutral-800 rounded-2xl overflow-hidden shadow-2xl relative group transition-all duration-500 cursor-pointer"
-                    >
-                      <img 
-                        src={heroImgUrl} 
-                        alt={HeroSettings.titleHighlight || heroLinkedProduct?.name || "منتج الهيرو"} 
-                        className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black via-black/60 to-transparent p-4 flex justify-between items-end">
-                        <div>
-                          <div className="text-[10px] text-lime-400 font-bold uppercase tracking-wider">{heroCardSubtext}</div>
-                          <div className="text-white text-xs font-bold truncate max-w-[150px]">{heroLinkedProduct?.name || HeroSettings.titleHighlight}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-[9px] text-neutral-300 uppercase">سعر تنافسي</div>
-                          <div className="text-lime-400 text-sm font-black font-mono">{heroDisplayPrice.toLocaleString()} ر.س</div>
-                        </div>
-                      </div>
+              <div className="w-full md:w-80 flex-shrink-0 flex items-center justify-center relative md:order-2">
+                <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/20 to-lime-500/10 blur-3xl -z-10 rounded-full"></div>
+                <div 
+                  onClick={() => {
+                    if (heroLinkedProduct) handleSelectProduct(heroLinkedProduct);
+                  }}
+                  className="w-64 h-48 md:w-80 md:h-60 bg-zinc-950 border border-neutral-800 rounded-2xl overflow-hidden shadow-2xl relative group transition-all duration-500 cursor-pointer"
+                >
+                  <img 
+                    src={heroImgUrl} 
+                    alt={currentHero.titleHighlight || heroLinkedProduct?.name || "منتج الهيرو"} 
+                    className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black via-black/60 to-transparent p-4 flex justify-between items-end">
+                    <div>
+                      <div className="text-[10px] text-lime-400 font-bold uppercase tracking-wider">{heroCardSubtext}</div>
+                      <div className="text-white text-xs font-bold truncate max-w-[150px]">{heroLinkedProduct?.name || currentHero.titleHighlight}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[9px] text-neutral-300 uppercase">سعر تنافسي</div>
+                      <div className="text-lime-400 text-sm font-black font-mono">{heroDisplayPrice.toLocaleString()} ر.س</div>
                     </div>
                   </div>
-                </section>
+                </div>
+              </div>
+            </section>
 
         {/* Categories Banner Quick Cards */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4" id="categories-grid-quick">
