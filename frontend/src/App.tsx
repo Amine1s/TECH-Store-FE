@@ -40,7 +40,7 @@ import {
   AlertOctagon
 } from "lucide-react";
 import { WaveBackground } from "./components/WaveBackground";
-import { getProducts, Product, HeroSettings, defaultHeroSettings } from "./data/products";
+import { getProducts, Product, HeroSettings, defaultHeroSettings, heroSettings as initialHeroSettings } from "./data/products";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { LazyImage } from "./components/LazyImage";
 
@@ -446,7 +446,7 @@ export default function App() {
   const totalCartItems = cart.reduce((acc, curr) => acc + curr.quantity, 0);
   const totalCartPrice = cart.reduce((acc, curr) => acc + (curr.product.price * curr.quantity), 0);
 // Active Hero banner computed values (cleanly declared in top level scope)
-  const currentHero = (HeroSettings && HeroSettings.title) ? HeroSettings : defaultHeroSettings;
+  const currentHero = (heroSettings && heroSettings.title) ? heroSettings : defaultHeroSettings;
   const heroLinkedProduct = products.find(p => p.id === currentHero.productId) || products.find(p => p.id === 'c-3') || (products.length > 0 ? products[0] : null);
   const heroImgUrl = currentHero.customImageUrl || heroLinkedProduct?.image || "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80";
   const heroDisplayPrice = currentHero.customPrice !== undefined ? currentHero.customPrice : (heroLinkedProduct?.price || 8499);
