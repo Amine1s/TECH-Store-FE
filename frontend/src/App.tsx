@@ -53,7 +53,18 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("featured");
-  
+  const [heroSettings, setHeroSettings] = useState<HeroSettings>(() => {
+    const stored = localStorage.getItem("techcore_hero_settings");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.title) return parsed;
+      } catch (e) {
+        console.error("Failed to parse stored hero settings", e);
+      }
+    }
+    return defaultHeroSettings;
+  });
   // Cart state
   const [cart, setCart] = useState<{ product: Product; quantity: number; selectedVariants?: Record<string, string> }[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -569,20 +580,20 @@ export default function App() {
           />
         ) : (
           <>
-            {/* 3. Hero Showcase Banner */}
-         <section className="glass-panel rounded-3xl overflow-hidden relative border-l-4 border-lime-400 p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl" id="hero-banner">
-              <div className="space-y-4 max-w-xl text-right md:order-1">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-black tracking-widest text-purple-400 bg-purple-950/50 px-3 py-1 rounded-full border border-purple-500/20">
-                      <Zap className="w-3.5 h-3.5 text-lime-400" />
-                      {heroSettings.badge || "عرض الأسبوع الحصري"}
-                    </span>
-                    <h2 className="text-3xl md:text-5xl font-black leading-tight text-white">
-                      {heroSettings.title || "جيل جديد من الحواسيب الخارقة"}{" "}
-                      <span className="text-lime-400">{heroSettings.titleHighlight || "Pro-X الجيل العاشر"}</span>
-                    </h2>
-                    <p className="text-neutral-300 text-xs md:text-sm leading-relaxed">
-                      {heroSettings.description || "تغلب على الحدود الرقمية مع معالجات ثنائية النواة ونظام تبريد مائي مغلق. صمم خصيصاً للمبرمجين واللاعبين المحترفين الذين يطلبون الفخامة والسرعة الفائقة مع تشفير حماية متقدم."}
-                    </p>
+                      {/* 3. Hero Showcase Banner */}
+                       <section className="glass-panel rounded-3xl overflow-hidden relative border-l-4 border-lime-400 p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl" id="hero-banner">
+                 <div className="space-y-4 max-w-xl text-right md:order-1">
+                   <span className="inline-flex items-center gap-1.5 text-xs font-black tracking-widest text-purple-400 bg-purple-950/50 px-3 py-1 rounded-full border border-purple-500/20">
+                    <Zap className="w-3.5 h-3.5 text-lime-400" />
+                {heroSettings?.badge || "عرض الأسبوع الحصري"}
+                   </span>
+                <h2 className="text-3xl md:text-5xl font-black leading-tight text-white">
+                  {heroSettings?.title || "جيل جديد من الحواسيب الخارقة"}{" "}
+                     <span className="text-lime-400">{heroSettings?.titleHighlight || "Pro-X الجيل العاشر"}</span>
+                     </h2>
+                        <p className="text-neutral-300 text-xs md:text-sm leading-relaxed">
+                       {heroSettings?.description || "تغلب على الحدود الرقمية مع معالجات ثنائية النواة ونظام تبريد مائي مغلق. صمم خصيصاً للمبرمجين واللاعبين المحترفين الذين يطلبون الفخامة والسرعة الفائقة مع تشفير حماية متقدم."}
+                        </p>
                     
                     <div className="flex flex-wrap gap-3 items-center pt-2">
                       <button 
