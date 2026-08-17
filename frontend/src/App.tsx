@@ -606,7 +606,7 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
                   {currentHero.title || "جيل جديد من الحواسيب الخارقة"}{" "}
                   <span className="text-lime-400">{currentHero.titleHighlight || "Pro-X الجيل العاشر"}</span>
                 </h2>
-                <p className="text-neutral-300 text-xs md:text-sm leading-relaxed">
+                <p className="text-neutral-300 text-xs md:text-sm leading-relaxed whitespace-pre-line">
                   {currentHero.description || "تغلب على الحدود الرقمية مع معالجات ثنائية النواة ونظام تبريد مائي مغلق. صمم خصيصاً للمبرمجين واللاعبين المحترفين الذين يطلبون الفخامة والسرعة الفائقة مع تشفير حماية متقدم."}
                 </p>
                 
@@ -840,7 +840,7 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
                     </h3>
 
                     {/* Short Description */}
-                    <p className="text-[11px] text-neutral-400 line-clamp-2 mt-1 leading-relaxed">
+                    <p className="text-[11px] text-neutral-400 line-clamp-2 mt-1 leading-relaxed whitespace-pre-line">
                       {product.description}
                     </p>
                   </div>
@@ -848,12 +848,12 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
                   {/* Specs previews */}
                   <div className="space-y-1 py-2 border-t border-b border-neutral-900 text-[10px] text-neutral-400">
                     <div className="flex items-center gap-1.5 truncate">
-                      <span className="w-1 h-1 rounded-full bg-lime-400"></span>
-                      <span>{product.specs[0]}</span>
+                      <span className="w-1 h-1 rounded-full bg-lime-400 flex-shrink-0"></span>
+                      <span className="whitespace-pre-line truncate">{product.specs[0]}</span>
                     </div>
                     <div className="flex items-center gap-1.5 truncate">
-                      <span className="w-1 h-1 rounded-full bg-purple-400"></span>
-                      <span>{product.specs[1]}</span>
+                      <span className="w-1 h-1 rounded-full bg-purple-400 flex-shrink-0"></span>
+                      <span className="whitespace-pre-line truncate">{product.specs[1]}</span>
                     </div>
                   </div>
 
@@ -1138,7 +1138,7 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
                   </span>
                   
                   <h3 className="text-lg sm:text-xl font-black text-white leading-snug">{selectedProduct.name}</h3>
-                  <p className="text-xs text-neutral-300 leading-relaxed">{selectedProduct.description}</p>
+                  <p className="text-xs text-neutral-300 leading-relaxed whitespace-pre-line">{selectedProduct.description}</p>
                   
                   {/* Detailed Specs List */}
                   <div className="space-y-2 pt-2">
@@ -1146,8 +1146,8 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
                     <ul className="text-[11px] text-neutral-400 space-y-1.5 pr-2">
                       {selectedProduct.specs.map((spec, i) => (
                         <li key={i} className="flex items-start gap-1.5">
-                          <CheckCircle className="w-3.5 h-3.5 text-lime-400 mt-0.5 flex-shrink-0" />
-                          <span>{spec}</span>
+                          <CheckCircle className="w-3.5 h-3.5 text-lime-400 mt-0.5 flex-shrink-0 flex-shrink-0" />
+                          <span className="whitespace-pre-line leading-relaxed">{spec}</span>
                         </li>
                       ))}
                     </ul>
