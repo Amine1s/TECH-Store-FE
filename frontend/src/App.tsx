@@ -2247,9 +2247,9 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
             <span>- جميع الحقوق محفوظة لعام 2026</span>
           </div>
           <div className="flex flex-wrap justify-center gap-4 text-neutral-400">
-            <span>تشفير SSL 256-bit</span>
+            <span>المشروع تجريبي و حقوق الملكية محفوضة للمطور  و لا يمكن جمع معلومات عن المستخدم</span>
             <span className="text-neutral-800">|</span>
-            <span>خادم Node.js v20.x السريع</span>
+            <span>تم التطوير من قبل MOHAMMEAD AMINE</span>
             <span className="text-neutral-800">|</span>
             <span>طاقة استيعابية لأكثر من 5000+ زائر متزامن</span>
           </div>
