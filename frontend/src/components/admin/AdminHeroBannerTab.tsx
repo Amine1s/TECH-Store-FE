@@ -161,7 +161,7 @@ export function AdminHeroBannerTab({
               {formData.title || "جيل جديد من الحواسيب الخارقة"}{" "}
               <span className="text-lime-400">{formData.titleHighlight || "Pro-X الجيل العاشر"}</span>
             </h2>
-            <p className="text-neutral-300 text-xs leading-relaxed line-clamp-3">
+            <p className="text-neutral-300 text-xs leading-relaxed hitespace-pre-line">
               {formData.description || "تغلب على الحدود الرقمية مع معالجات ثنائية النواة ونظام تبريد مائي مغلق..."}
             </p>
             
