@@ -19,31 +19,29 @@ const ORDERS_COLLECTION = "orders";
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 
-// 1. Subscribe to Real-time Products
+// 1. Subscribe to Real-time Products with Automatic First-Time Seeding
 export function subscribeToProducts(
   onUpdate: (products: Product[]) => void,
   onError?: (err: any) => void
 ) {
   const colRef = collection(db, PRODUCTS_COLLECTION);
+  let isInitialSyncDone = false;
 
   return onSnapshot(
     colRef,
     async (snapshot) => {
       if (snapshot.empty) {
-        // Fetch from backend API
-        try {
-          const res = await fetch(`${API_BASE_URL}/api/products?limit=200`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data.products && data.products.length > 0) {
-              onUpdate(data.products);
-              return;
-            }
-          }
-        } catch (e) {
-          console.warn("Backend products fetch notice:", e);
-        }
+        // Provide initial catalog immediately to the UI
         onUpdate(INITIAL_PRODUCTS);
+
+        // Auto-seed to Firestore so the collection and documents appear in Firebase Console
+        if (!isInitialSyncDone) {
+          isInitialSyncDone = true;
+          console.log("Firestore products collection is empty. Auto-seeding initial catalog...");
+          syncAllProductsToFirestore(INITIAL_PRODUCTS).catch((err) => {
+            console.warn("Auto-seed to Firestore notice:", err);
+          });
+        }
       } else {
         const prods: Product[] = [];
         snapshot.forEach((d) => {
@@ -58,11 +56,15 @@ export function subscribeToProducts(
         const res = await fetch(`${API_BASE_URL}/api/products?limit=200`);
         if (res.ok) {
           const data = await res.json();
-          if (data.products) onUpdate(data.products);
+          if (data.products && data.products.length > 0) {
+            onUpdate(data.products);
+            return;
+          }
         }
       } catch (apiErr) {
-        onUpdate(INITIAL_PRODUCTS);
+        // Fallback to local products
       }
+      onUpdate(INITIAL_PRODUCTS);
       if (onError) onError(error);
     }
   );
@@ -81,13 +83,41 @@ export async function saveProductToFirestore(product: Product): Promise<void> {
     console.warn("Backend proxy save note, proceeding with direct sync:", err);
   }
 
-  // Also sync with Firestore
+  // Also sync directly with Firestore
   try {
     const docRef = doc(db, PRODUCTS_COLLECTION, product.id);
     await setDoc(docRef, product, { merge: true });
   } catch (fsErr) {
     console.error("Firestore direct write error:", fsErr);
   }
+}
+
+// 2.1 Batch sync multiple/all products to Firestore in one operation
+export async function syncAllProductsToFirestore(productsList: Product[]): Promise<number> {
+  if (!productsList || productsList.length === 0) return 0;
+  
+  let successCount = 0;
+  try {
+    const batch = writeBatch(db);
+    productsList.forEach((product) => {
+      const docRef = doc(db, PRODUCTS_COLLECTION, product.id);
+      batch.set(docRef, product, { merge: true });
+    });
+    await batch.commit();
+    successCount = productsList.length;
+  } catch (e) {
+    console.warn("Batch write error, falling back to individual sync:", e);
+    for (const p of productsList) {
+      try {
+        const docRef = doc(db, PRODUCTS_COLLECTION, p.id);
+        await setDoc(docRef, p, { merge: true });
+        successCount++;
+      } catch (err) {
+        console.error(`Failed to sync product ${p.id}:`, err);
+      }
+    }
+  }
+  return successCount;
 }
 
 // 3. Delete Product via Secure Backend API & Firestore
