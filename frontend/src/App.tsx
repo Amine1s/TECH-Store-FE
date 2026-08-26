@@ -40,9 +40,14 @@ import {
   AlertOctagon
 } from "lucide-react";
 import { WaveBackground } from "./components/WaveBackground";
-import { getProducts, Product, HeroSettings, defaultHeroSettings, heroSettings as initialHeroSettings } from "./data/products";
+import { getProducts, Product, HeroSettings, defaultHeroSettings } from "./data/products";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { LazyImage } from "./components/LazyImage";
+import {
+  deleteProductFromFirestore,
+  saveProductToFirestore,
+  syncAllProductsToFirestore,
+} from "./lib/firestoreService";
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 
@@ -183,6 +188,7 @@ export default function App() {
   
   // Success notification banner helper
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [isSyncingAllProducts, setIsSyncingAllProducts] = useState(false);
 
   // Back to Top Button state
   const [showScrollToTop, setShowScrollToTop] = useState(false);
@@ -255,6 +261,9 @@ export default function App() {
         if (parsed && Array.isArray(parsed) && parsed.length > 0) {
           setProducts(parsed);
           setFilteredProducts(parsed);
+          void syncAllProductsToFirestore(parsed).catch((err) => {
+            console.warn("Could not sync local catalog to Firestore:", err);
+          });
           return;
         }
       } catch (e) {
@@ -265,6 +274,9 @@ export default function App() {
     setProducts(all);
     setFilteredProducts(all);
     localStorage.setItem("techcore_products", JSON.stringify(all));
+    void syncAllProductsToFirestore(all).catch((err) => {
+      console.warn("Could not seed catalog to Firestore:", err);
+    });
   }, []);
 
 // Fetch Hero Banner Settings from backend on load
@@ -307,6 +319,7 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
     const updated = [newProduct, ...products];
     setProducts(updated);
     localStorage.setItem("techcore_products", JSON.stringify(updated));
+    void saveProductToFirestore(newProduct);
     triggerToast(`تم إضافة "${newProduct.name}" بنجاح!`);
   };
 
@@ -314,6 +327,7 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
     const updated = products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
     setProducts(updated);
     localStorage.setItem("techcore_products", JSON.stringify(updated));
+    void saveProductToFirestore(updatedProduct);
     
     // Also update item details in cart if present
     setCart(prev => prev.map(item => 
@@ -330,12 +344,26 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
     const updated = products.filter(p => p.id !== productId);
     setProducts(updated);
     localStorage.setItem("techcore_products", JSON.stringify(updated));
+    void deleteProductFromFirestore(productId);
     
     // Also remove from cart if it was there
     setCart(prev => prev.filter(item => item.product.id !== productId));
 
     if (productToDelete) {
       triggerToast(`تم حذف المنتج "${productToDelete.name}" من المتجر`);
+    }
+  };
+
+  const handleSyncAllProducts = async () => {
+    setIsSyncingAllProducts(true);
+    try {
+      const syncedCount = await syncAllProductsToFirestore(products);
+      triggerToast(`تمت مزامنة ${syncedCount} منتجًا مع Firestore بنجاح!`);
+    } catch (err) {
+      console.error("Failed to sync all products with Firestore:", err);
+      triggerToast("تعذر مزامنة المنتجات مع Firestore");
+    } finally {
+      setIsSyncingAllProducts(false);
     }
   };
 
@@ -590,6 +618,8 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
             onEditProduct={handleEditProduct}
             onDeleteProduct={handleDeleteProduct}
             onClose={() => setIsAdminMode(false)}
+            isSyncingAll={isSyncingAllProducts}
+            onSyncAllToFirestore={handleSyncAllProducts}
             heroSettings={HeroSettings}
             onSaveHeroSettings={handleSaveHeroSettings}
           />

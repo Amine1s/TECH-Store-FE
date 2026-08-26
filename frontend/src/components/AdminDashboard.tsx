@@ -26,6 +26,8 @@ interface AdminDashboardProps {
   onClose: () => void;
   heroSettings?: HeroSettings;
   onSaveHeroSettings?: (settings: HeroSettings) => void;
+  isSyncingAll?: boolean;
+  onSyncAllToFirestore?: () => void;
 }
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
@@ -38,6 +40,8 @@ export function AdminDashboard({
   onClose,
   heroSettings = defaultHeroSettings,
   onSaveHeroSettings,
+  isSyncingAll = false,
+  onSyncAllToFirestore,
 }: AdminDashboardProps) {
   // Navigation & Search States
   const [activeTab, setActiveTab] = useState<"analytics" | "list" | "form" | "orders" | "security">("analytics");
@@ -532,6 +536,8 @@ export function AdminDashboard({
           onConfirmDelete={handleConfirmDelete}
           resetForm={resetForm}
           heroProductId={safeHero.productId}
+          isSyncingAll={isSyncingAll}
+          onSyncAllToFirestore={onSyncAllToFirestore}
           onSetAsHeroProduct={(product) => {
             if (onSaveHeroSettings) {
               const updated = {
