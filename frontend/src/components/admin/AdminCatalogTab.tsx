@@ -10,7 +10,9 @@ import {
   ChevronRight,
   ChevronLeft,
   Sparkles,
-  Zap
+  Zap,
+  RefreshCw,
+  CloudUpload
 } from "lucide-react";
 import { Product } from "../../data/products";
 
@@ -185,7 +187,7 @@ export function AdminCatalogTab({
           />
         </div>
 
-        <div className="flex gap-2 w-full md:w-auto overflow-x-auto scrollbar-none pb-1 md:pb-0">
+        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto scrollbar-none pb-1 md:pb-0 shrink-0">
           <button
             type="button"
             onClick={() => {
@@ -243,28 +245,26 @@ export function AdminCatalogTab({
             الأجهزة المنزلية
           </button>
 
-          {onSyncAllToFirestore && (
-            <button
-              id="admin-sync-firestore-btn-filter"
-              type="button"
-              onClick={onSyncAllToFirestore}
-              disabled={isSyncingAll}
-              title="رفع وحفظ جميع المنتجات دفعة واحدة إلى قاعدة بيانات Firestore السحابية"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap cursor-pointer bg-lime-400/20 hover:bg-lime-400/30 text-lime-400 border border-lime-400/40 transition-all disabled:opacity-50"
-            >
-              {isSyncingAll ? (
-                <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>جاري المزامنة مع Firestore...</span>
-                </>
-              ) : (
-                <>
-                  <CloudUpload className="w-3.5 h-3.5" />
-                  <span>مزامنة الكل مع Firestore ({products.length})</span>
-                </>
-              )}
-            </button>
-          )}
+          <button
+            id="admin-sync-firestore-btn-filter"
+            type="button"
+            onClick={onSyncAllToFirestore}
+            disabled={isSyncingAll}
+            title="رفع وحفظ جميع المنتجات دفعة واحدة إلى قاعدة بيانات Firestore السحابية"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black whitespace-nowrap cursor-pointer bg-lime-400 text-black shadow-md shadow-lime-400/20 hover:bg-lime-300 transition-all disabled:opacity-50 shrink-0"
+          >
+            {isSyncingAll ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>جاري المزامنة مع Firestore...</span>
+              </>
+            ) : (
+              <>
+                <CloudUpload className="w-3.5 h-3.5" />
+                <span>مزامنة الكل مع Firestore ({products.length})</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -374,7 +374,7 @@ export function AdminCatalogTab({
                         {heroProductId === product.id && (
                           <span className="inline-flex items-center gap-1 text-[9px] font-black text-black bg-lime-400 border border-lime-400 px-2 py-0.5 rounded-full w-max shadow-sm shadow-lime-400/20 animate-pulse">
                             <Sparkles className="w-2.5 h-2.5 fill-black text-black" />
-                            منتج الهيرو الرئيسي ⭐
+                            منتج الهيرو الرئيسي 
                           </span>
                         )}
                         {product.featured && (
@@ -468,4 +468,3 @@ export function AdminCatalogTab({
     </div>
   );
 }
-
