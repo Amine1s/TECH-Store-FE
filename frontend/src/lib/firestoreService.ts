@@ -8,10 +8,15 @@ import {
   onSnapshot,
   query,
   orderBy,
-  writeBatch
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { Product, HeroSettings, defaultHeroSettings, INITIAL_PRODUCTS } from "../data/products";
+import {
+  Product,
+  HeroSettings,
+  defaultHeroSettings,
+  INITIAL_PRODUCTS,
+} from "../data/products";
 
 const PRODUCTS_COLLECTION = "products";
 const SETTINGS_COLLECTION = "settings";
@@ -22,7 +27,7 @@ const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 // 1. Subscribe to Real-time Products with Automatic First-Time Seeding
 export function subscribeToProducts(
   onUpdate: (products: Product[]) => void,
-  onError?: (err: any) => void
+  onError?: (err: any) => void,
 ) {
   const colRef = collection(db, PRODUCTS_COLLECTION);
   let isInitialSyncDone = false;
@@ -37,7 +42,9 @@ export function subscribeToProducts(
         // Auto-seed to Firestore so the collection and documents appear in Firebase Console
         if (!isInitialSyncDone) {
           isInitialSyncDone = true;
-          console.log("Firestore products collection is empty. Auto-seeding initial catalog...");
+          console.log(
+            "Firestore products collection is empty. Auto-seeding initial catalog...",
+          );
           syncAllProductsToFirestore(INITIAL_PRODUCTS).catch((err) => {
             console.warn("Auto-seed to Firestore notice:", err);
           });
@@ -51,7 +58,10 @@ export function subscribeToProducts(
       }
     },
     async (error) => {
-      console.warn("Firestore products live snapshot note (using API gateway):", error);
+      console.warn(
+        "Firestore products live snapshot note (using API gateway):",
+        error,
+      );
       try {
         const res = await fetch(`${API_BASE_URL}/api/products?limit=200`);
         if (res.ok) {
@@ -66,7 +76,7 @@ export function subscribeToProducts(
       }
       onUpdate(INITIAL_PRODUCTS);
       if (onError) onError(error);
-    }
+    },
   );
 }
 
@@ -77,7 +87,7 @@ export async function saveProductToFirestore(product: Product): Promise<void> {
     await fetch(`${API_BASE_URL}/api/admin/products`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(product)
+      body: JSON.stringify(product),
     });
   } catch (err) {
     console.warn("Backend proxy save note, proceeding with direct sync:", err);
@@ -93,27 +103,51 @@ export async function saveProductToFirestore(product: Product): Promise<void> {
 }
 
 // 2.1 Batch sync multiple/all products to Firestore with dual-channel resilience (Backend API + Client Direct)
-export async function syncAllProductsToFirestore(productsList: Product[]): Promise<number> {
+export async function syncAllProductsToFirestore(
+  productsList: Product[],
+): Promise<number> {
   if (!productsList || productsList.length === 0) return 0;
-  
+
   let successCount = 0;
 
-  // 1. Try to sync via Backend API first (bypasses browser adblockers or strict CORS)
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/admin/products/batch-sync`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ products: productsList })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.count) {
-        console.log(`Backend batch synced ${data.count} products successfully.`);
+  // Keep each request well below Vercel's request-body limit, especially for uploaded data URLs.
+  const apiBatch: Product[] = [];
+  let apiBatchBytes = 0;
+  const maxApiBatchBytes = 500_000;
+  const flushApiBatch = async () => {
+    if (apiBatch.length === 0) return;
+    const batch = apiBatch.splice(0, apiBatch.length);
+    apiBatchBytes = 0;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/products/batch-sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ products: batch }),
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
       }
+      const data = await res.json();
+      console.log(
+        `Backend batch synced ${data?.count || batch.length} products successfully.`,
+      );
+    } catch (err) {
+      console.warn("Backend batch-sync gateway notice:", err);
     }
-  } catch (err) {
-    console.warn("Backend batch-sync gateway notice:", err);
+  };
+
+  for (const product of productsList) {
+    const productBytes = JSON.stringify(product).length;
+    if (
+      apiBatch.length > 0 &&
+      apiBatchBytes + productBytes > maxApiBatchBytes
+    ) {
+      await flushApiBatch();
+    }
+    apiBatch.push(product);
+    apiBatchBytes += productBytes;
   }
+  await flushApiBatch();
 
   // 2. Sync directly to Firestore via Client SDK (in chunks of 25 to guarantee Firestore commit safety)
   const chunkSize = 25;
@@ -128,7 +162,10 @@ export async function syncAllProductsToFirestore(productsList: Product[]): Promi
       await batch.commit();
       successCount += chunk.length;
     } catch (e) {
-      console.warn(`Chunk ${i / chunkSize + 1} batch write note, syncing individual items:`, e);
+      console.warn(
+        `Chunk ${i / chunkSize + 1} batch write note, syncing individual items:`,
+        e,
+      );
       for (const p of chunk) {
         try {
           const docRef = doc(db, PRODUCTS_COLLECTION, p.id);
@@ -145,11 +182,13 @@ export async function syncAllProductsToFirestore(productsList: Product[]): Promi
 }
 
 // 3. Delete Product via Secure Backend API & Firestore
-export async function deleteProductFromFirestore(productId: string): Promise<void> {
+export async function deleteProductFromFirestore(
+  productId: string,
+): Promise<void> {
   // First, proxy through secure Backend API
   try {
     await fetch(`${API_BASE_URL}/api/admin/products/${productId}`, {
-      method: "DELETE"
+      method: "DELETE",
     });
   } catch (err) {
     console.warn("Backend proxy delete note:", err);
@@ -167,7 +206,7 @@ export async function deleteProductFromFirestore(productId: string): Promise<voi
 // 4. Subscribe to Real-time Hero Banner Settings
 export function subscribeToHeroSettings(
   onUpdate: (settings: HeroSettings) => void,
-  onError?: (err: any) => void
+  onError?: (err: any) => void,
 ) {
   const docRef = doc(db, SETTINGS_COLLECTION, "hero");
 
@@ -181,7 +220,10 @@ export function subscribeToHeroSettings(
       }
     },
     async (error) => {
-      console.warn("Firestore hero snapshot note, fetching from backend:", error);
+      console.warn(
+        "Firestore hero snapshot note, fetching from backend:",
+        error,
+      );
       try {
         const res = await fetch(`${API_BASE_URL}/api/hero-settings`);
         if (res.ok) {
@@ -192,18 +234,20 @@ export function subscribeToHeroSettings(
         onUpdate(defaultHeroSettings);
       }
       if (onError) onError(error);
-    }
+    },
   );
 }
 
 // 5. Save Hero Settings via Secure Backend API & Firestore
-export async function saveHeroSettingsToFirestore(settings: HeroSettings): Promise<void> {
+export async function saveHeroSettingsToFirestore(
+  settings: HeroSettings,
+): Promise<void> {
   // Proxy to Backend API
   try {
     await fetch(`${API_BASE_URL}/api/hero-settings`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(settings)
+      body: JSON.stringify(settings),
     });
   } catch (err) {
     console.warn("Backend proxy hero save note:", err);
@@ -221,7 +265,7 @@ export async function saveHeroSettingsToFirestore(settings: HeroSettings): Promi
 // 6. Subscribe to Real-time Orders
 export function subscribeToOrders(
   onUpdate: (orders: any[]) => void,
-  onError?: (err: any) => void
+  onError?: (err: any) => void,
 ) {
   const colRef = collection(db, ORDERS_COLLECTION);
   const q = query(colRef, orderBy("createdAt", "desc"));
@@ -236,7 +280,10 @@ export function subscribeToOrders(
       onUpdate(ordersList);
     },
     async (error) => {
-      console.warn("Firestore orders snapshot note, fetching from backend API:", error);
+      console.warn(
+        "Firestore orders snapshot note, fetching from backend API:",
+        error,
+      );
       try {
         const res = await fetch(`${API_BASE_URL}/api/orders`);
         if (res.ok) {
@@ -247,20 +294,24 @@ export function subscribeToOrders(
         console.warn("Orders fetch fallback failed:", e);
       }
       if (onError) onError(error);
-    }
+    },
   );
 }
 
 // 7. Save New Order via Secure Backend API & Firestore
-export async function saveOrderToFirestore(orderData: any): Promise<{ orderId: string; trackingId: string }> {
-  const orderId = orderData.id || `ORD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+export async function saveOrderToFirestore(
+  orderData: any,
+): Promise<{ orderId: string; trackingId: string }> {
+  const orderId =
+    orderData.id ||
+    `ORD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
   const payload = {
     ...orderData,
     id: orderId,
     orderNumber: orderData.orderNumber || orderId,
     createdAt: orderData.createdAt || new Date().toISOString(),
-    status: orderData.status || "قيد المراجعة"
+    status: orderData.status || "قيد المراجعة",
   };
 
   try {
