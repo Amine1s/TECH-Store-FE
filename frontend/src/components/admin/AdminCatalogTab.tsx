@@ -31,6 +31,8 @@ interface AdminCatalogTabProps {
   resetForm: () => void;
   heroProductId?: string;
   onSetAsHeroProduct?: (product: Product) => void;
+  isSyncingAll?: boolean;
+  onSyncAllToFirestore?: () => void;
 }
 
 export function AdminCatalogTab({
@@ -50,6 +52,8 @@ export function AdminCatalogTab({
   resetForm,
   heroProductId,
   onSetAsHeroProduct,
+  isSyncingAll,
+  onSyncAllToFirestore,
 }: AdminCatalogTabProps) {
   // Calculations
   const totalProducts = products.length;
@@ -139,6 +143,30 @@ export function AdminCatalogTab({
             </div>
           </div>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {onSyncAllToFirestore && (
+            <button
+              id="admin-sync-firestore-btn-header"
+              type="button"
+              onClick={onSyncAllToFirestore}
+              disabled={isSyncingAll}
+              title="رفع وحفظ جميع المنتجات دفعة واحدة إلى قاعدة بيانات Firestore السحابية"
+              className="flex items-center gap-2 px-4 py-2 bg-lime-400 hover:bg-lime-300 text-black font-black rounded-xl text-xs shadow-lg shadow-lime-400/20 transition-all cursor-pointer disabled:opacity-50"
+            >
+              {isSyncingAll ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>جاري المزامنة...</span>
+                </>
+              ) : (
+                <>
+                  <CloudUpload className="w-4 h-4" />
+                  <span>مزامنة مع Firestore ({products.length})</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filters Bar */}
@@ -214,6 +242,29 @@ export function AdminCatalogTab({
           >
             الأجهزة المنزلية
           </button>
+
+          {onSyncAllToFirestore && (
+            <button
+              id="admin-sync-firestore-btn-filter"
+              type="button"
+              onClick={onSyncAllToFirestore}
+              disabled={isSyncingAll}
+              title="رفع وحفظ جميع المنتجات دفعة واحدة إلى قاعدة بيانات Firestore السحابية"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap cursor-pointer bg-lime-400/20 hover:bg-lime-400/30 text-lime-400 border border-lime-400/40 transition-all disabled:opacity-50"
+            >
+              {isSyncingAll ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>جاري المزامنة مع Firestore...</span>
+                </>
+              ) : (
+                <>
+                  <CloudUpload className="w-3.5 h-3.5" />
+                  <span>مزامنة الكل مع Firestore ({products.length})</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -319,11 +370,11 @@ export function AdminCatalogTab({
 
                     {/* Status Tags */}
                     <td className="p-4">
-                       <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-1">
                         {heroProductId === product.id && (
                           <span className="inline-flex items-center gap-1 text-[9px] font-black text-black bg-lime-400 border border-lime-400 px-2 py-0.5 rounded-full w-max shadow-sm shadow-lime-400/20 animate-pulse">
                             <Sparkles className="w-2.5 h-2.5 fill-black text-black" />
-                            منتج الهيرو الرئيسي
+                            منتج الهيرو الرئيسي ⭐
                           </span>
                         )}
                         {product.featured && (
@@ -417,3 +468,4 @@ export function AdminCatalogTab({
     </div>
   );
 }
+
