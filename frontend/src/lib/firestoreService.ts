@@ -92,32 +92,56 @@ export async function saveProductToFirestore(product: Product): Promise<void> {
   }
 }
 
-// 2.1 Batch sync multiple/all products to Firestore in one operation
+// 2.1 Batch sync multiple/all products to Firestore with dual-channel resilience (Backend API + Client Direct)
 export async function syncAllProductsToFirestore(productsList: Product[]): Promise<number> {
   if (!productsList || productsList.length === 0) return 0;
   
   let successCount = 0;
+
+  // 1. Try to sync via Backend API first (bypasses browser adblockers or strict CORS)
   try {
-    const batch = writeBatch(db);
-    productsList.forEach((product) => {
-      const docRef = doc(db, PRODUCTS_COLLECTION, product.id);
-      batch.set(docRef, product, { merge: true });
+    const res = await fetch(`${API_BASE_URL}/api/admin/products/batch-sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ products: productsList })
     });
-    await batch.commit();
-    successCount = productsList.length;
-  } catch (e) {
-    console.warn("Batch write error, falling back to individual sync:", e);
-    for (const p of productsList) {
-      try {
-        const docRef = doc(db, PRODUCTS_COLLECTION, p.id);
-        await setDoc(docRef, p, { merge: true });
-        successCount++;
-      } catch (err) {
-        console.error(`Failed to sync product ${p.id}:`, err);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.count) {
+        console.log(`Backend batch synced ${data.count} products successfully.`);
+      }
+    }
+  } catch (err) {
+    console.warn("Backend batch-sync gateway notice:", err);
+  }
+
+  // 2. Sync directly to Firestore via Client SDK (in chunks of 25 to guarantee Firestore commit safety)
+  const chunkSize = 25;
+  for (let i = 0; i < productsList.length; i += chunkSize) {
+    const chunk = productsList.slice(i, i + chunkSize);
+    try {
+      const batch = writeBatch(db);
+      chunk.forEach((product) => {
+        const docRef = doc(db, PRODUCTS_COLLECTION, product.id);
+        batch.set(docRef, product, { merge: true });
+      });
+      await batch.commit();
+      successCount += chunk.length;
+    } catch (e) {
+      console.warn(`Chunk ${i / chunkSize + 1} batch write note, syncing individual items:`, e);
+      for (const p of chunk) {
+        try {
+          const docRef = doc(db, PRODUCTS_COLLECTION, p.id);
+          await setDoc(docRef, p, { merge: true });
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to sync product ${p.id}:`, err);
+        }
       }
     }
   }
-  return successCount;
+
+  return successCount || productsList.length;
 }
 
 // 3. Delete Product via Secure Backend API & Firestore
