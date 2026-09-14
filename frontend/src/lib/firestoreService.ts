@@ -24,6 +24,12 @@ const ORDERS_COLLECTION = "orders";
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 
+// Helper to strip any undefined values that cause Firestore to reject writes
+function cleanForFirestore<T>(data: T): T {
+  if (!data) return data;
+  return JSON.parse(JSON.stringify(data));
+}
+
 // 1. Subscribe to Real-time Products with Automatic First-Time Seeding
 export function subscribeToProducts(
   onUpdate: (products: Product[]) => void,
