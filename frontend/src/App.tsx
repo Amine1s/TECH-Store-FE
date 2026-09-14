@@ -43,6 +43,8 @@ import { WaveBackground } from "./components/WaveBackground";
 import { getProducts, Product, HeroSettings, defaultHeroSettings } from "./data/products";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { LazyImage } from "./components/LazyImage";
+import { NotFound } from "./components/NotFound";
+import { HeroSpecsModal } from "./components/HeroSpecsModal";
 import {
   deleteProductFromFirestore,
   saveProductToFirestore,
@@ -87,7 +89,9 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isHeroSpecsOpen, setIsHeroSpecsOpen] = useState(false);
 
+    // Hero Section Dynamic Banner Settings
   const handleSelectProduct = (product: Product | null) => {
     setSelectedProduct(product);
     if (product && product.variants && product.variants.length > 0) {
@@ -407,13 +411,13 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
       setSuccessToast(null);
     }, 3000);
   };
-
-  // Add to cart handler
-  const addToCart = (product: Product) => {
+// Add to cart handler
+  const addToCart = (product: Product, customVariants?: Record<string, string>) => {
+    const variantsToUse = customVariants || selectedVariants;
     // Check if same product with same variants already exists in cart
     const existingIndex = cart.findIndex(item => 
       item.product.id === product.id && 
-      JSON.stringify(item.selectedVariants || {}) === JSON.stringify(selectedVariants)
+      JSON.stringify(item.selectedVariants || {}) === JSON.stringify(variantsToUse)
     );
 
     if (existingIndex > -1) {
@@ -426,10 +430,10 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
       updated[existingIndex].quantity += 1;
       setCart(updated);
     } else {
-      setCart([...cart, { product, quantity: 1, selectedVariants: { ...selectedVariants } }]);
+      setCart([...cart, { product, quantity: 1, selectedVariants: { ...variantsToUse } }]);
     }
 
-    const choicesStr = Object.entries(selectedVariants).map(([k, v]) => `${k}: ${v}`).join(", ");
+    const choicesStr = Object.entries(variantsToUse).map(([k, v]) => `${k}: ${v}`).join(", ");
     const toastMsg = choicesStr 
       ? `تم إضافة "${product.name}" (${choicesStr}) إلى السلة`
       : `تم إضافة "${product.name}" إلى سلة المشتريات`;
@@ -624,30 +628,44 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
             onSaveHeroSettings={handleSaveHeroSettings}
           />
         ) : (
-          <>
-                     {/* 3. Dynamic Hero Showcase Banner */}
-            <section className="glass-panel rounded-3xl overflow-hidden relative border-l-4 border-lime-400 p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl" id="hero-banner">
-              <div className="space-y-4 max-w-xl text-right md:order-1">
-                <span className="inline-flex items-center gap-1.5 text-xs font-black tracking-widest text-purple-400 bg-purple-950/50 px-3 py-1 rounded-full border border-purple-500/20">
+          <>{/* 3. Dynamic Hero Showcase Banner with Fixed Default Size */}
+            <section 
+              className="glass-panel rounded-3xl overflow-hidden relative border-l-4 border-lime-400 p-6 md:p-8 lg:p-10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 shadow-2xl min-h-[280px] md:min-h-[300px] md:max-h-[360px]" 
+              id="hero-banner"
+            >
+              <div className="space-y-3 md:space-y-4 max-w-xl text-right md:order-1 flex flex-col justify-center overflow-hidden">
+                <span className="inline-flex items-center gap-1.5 text-xs font-black tracking-widest text-purple-400 bg-purple-950/50 px-3 py-1 rounded-full border border-purple-500/20 w-fit">
                   <Zap className="w-3.5 h-3.5 text-lime-400" />
                   {currentHero.badge || "عرض الأسبوع الحصري"}
                 </span>
-                <h2 className="text-3xl md:text-5xl font-black leading-tight text-white">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black leading-tight text-white line-clamp-2">
                   {currentHero.title || "جيل جديد من الحواسيب الخارقة"}{" "}
                   <span className="text-lime-400">{currentHero.titleHighlight || "Pro-X الجيل العاشر"}</span>
                 </h2>
-                <p className="text-neutral-300 text-xs md:text-sm leading-relaxed whitespace-pre-line">
-                  {currentHero.description || "تغلب على الحدود الرقمية مع معالجات ثنائية النواة ونظام تبريد مائي مغلق. صمم خصيصاً للمبرمجين واللاعبين المحترفين الذين يطلبون الفخامة والسرعة الفائقة مع تشفير حماية متقدم."}
-                </p>
                 
-                <div className="flex flex-wrap gap-3 items-center pt-2">
+                {/* Controlled Compact Description Preview with Line-Clamp */}
+                <div 
+                  className="group cursor-pointer"
+                  onClick={() => setIsHeroSpecsOpen(true)}
+                  title="اضغط لعرض كامل المواصفات التقنية"
+                >
+                  <p className="text-neutral-300 text-xs md:text-sm leading-relaxed line-clamp-2 md:line-clamp-3 overflow-hidden text-ellipsis">
+                    {currentHero.description || "تغلب على الحدود الرقمية مع معالجات ثنائية النواة ونظام تبريد مائي مغلق. صمم خصيصاً للمبرمجين واللاعبين المحترفين الذين يطلبون الفخامة والسرعة الفائقة مع تشفير حماية متقدم."}
+                  </p>
+                  <span className="inline-flex items-center gap-1 text-[11px] text-lime-400 group-hover:text-lime-300 font-bold mt-1 transition">
+                    <span>عرض كامل المواصفات</span>
+                    <ChevronLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
+                  </span>
+                </div>
+                
+                <div className="flex flex-wrap gap-3 items-center pt-1">
                   <button 
-                    onClick={() => {
-                      if (heroLinkedProduct) handleSelectProduct(heroLinkedProduct);
-                    }}
-                    className="bg-lime-400 hover:bg-lime-300 text-black px-6 py-2.5 rounded-xl font-bold text-xs transition-all duration-300 shadow-lg shadow-lime-400/20 cursor-pointer"
+                    id="hero-discover-specs-btn"
+                    onClick={() => setIsHeroSpecsOpen(true)}
+                    className="bg-lime-400 hover:bg-lime-300 text-black px-6 py-2.5 rounded-xl font-bold text-xs transition-all duration-300 shadow-lg shadow-lime-400/20 cursor-pointer flex items-center gap-1.5"
                   >
-                    {currentHero.buttonText || "اكتشف المواصفات"}
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{currentHero.buttonText || "اكتشف المواصفات"}</span>
                   </button>
                   <div className="flex items-center gap-2 text-xs text-neutral-400">
                     <span className="w-2 h-2 rounded-full bg-lime-400 animate-ping"></span>
@@ -659,9 +677,7 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
               <div className="w-full md:w-80 flex-shrink-0 flex items-center justify-center relative md:order-2">
                 <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/20 to-lime-500/10 blur-3xl -z-10 rounded-full"></div>
                 <div 
-                  onClick={() => {
-                    if (heroLinkedProduct) handleSelectProduct(heroLinkedProduct);
-                  }}
+                  onClick={() => setIsHeroSpecsOpen(true)}
                   className="w-64 h-48 md:w-80 md:h-60 bg-zinc-950 border border-neutral-800 rounded-2xl overflow-hidden shadow-2xl relative group transition-all duration-500 cursor-pointer"
                 >
                   <img 
@@ -1273,6 +1289,17 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
           </div>
         </div>
       )}
+
+      {/* Hero Full Specifications Modal */}
+      <HeroSpecsModal
+        isOpen={isHeroSpecsOpen}
+        onClose={() => setIsHeroSpecsOpen(false)}
+        heroSettings={currentHero}
+        linkedProduct={heroLinkedProduct}
+        onAddToCart={(prod, variants) => {
+          addToCart(prod, variants);
+        }}
+      />
 
       {/* 8. Secure Checkout Form Modal with API Integration */}
       {isCheckoutOpen && (
