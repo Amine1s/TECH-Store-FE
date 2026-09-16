@@ -7,7 +7,8 @@ interface SecurityLog {
   ip: string;
   timestamp: string;
   status: 'SUCCESS' | 'BLOCKED_BRUTE_FORCE' | 'FAILED_INVALID_PASSWORD';
-  email: string;
+  email?: string;
+  username?: string;
   userAgent?: string;
 }
 
@@ -31,6 +32,7 @@ export function AdminSecurityTab() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Password Update State
+  const [adminUsernameInput, setAdminUsernameInput] = useState(() => localStorage.getItem("techcore_owner_username") || "admin");
   const [currentPasswordInput, setCurrentPasswordInput] = useState("");
   const [newPasswordInput, setNewPasswordInput] = useState("");
   const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
@@ -61,7 +63,7 @@ export function AdminSecurityTab() {
     return () => clearInterval(interval);
   }, []);
 
-  const handlePasswordUpdate = (e: React.FormEvent) => {
+   const handlePasswordUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     setUpdateMsg(null);
 
@@ -71,18 +73,26 @@ export function AdminSecurityTab() {
       return;
     }
 
-    if (newPasswordInput.length < 6) {
+    if (!adminUsernameInput.trim()) {
+      setUpdateMsg({ type: "error", text: "اسم مستخدم الإدارة لا يمكن أن يكون فارغاً!" });
+      return;
+    }
+
+    if (newPasswordInput && newPasswordInput.length < 6) {
       setUpdateMsg({ type: "error", text: "يجب أن تتكون كلمة المرور الجديدة من 6 خانات على الأقل لضمان القوة." });
       return;
     }
 
-    if (newPasswordInput !== confirmPasswordInput) {
+    if (newPasswordInput && newPasswordInput !== confirmPasswordInput) {
       setUpdateMsg({ type: "error", text: "كلمة المرور الجديدة وتأكيدها غير متطابقان!" });
       return;
     }
 
-    localStorage.setItem("techcore_owner_password", newPasswordInput.trim());
-    setUpdateMsg({ type: "success", text: "تم تحديث كلمة المرور وحفظها في التشفير المحلي بنجاح!" });
+    localStorage.setItem("techcore_owner_username", adminUsernameInput.trim());
+    if (newPasswordInput) {
+      localStorage.setItem("techcore_owner_password", newPasswordInput.trim());
+    }
+    setUpdateMsg({ type: "success", text: "تم تحديث بيانات دخول الإدارة (اسم المستخدم وكلمة المرور) بنجاح!" });
     setCurrentPasswordInput("");
     setNewPasswordInput("");
     setConfirmPasswordInput("");
@@ -121,7 +131,7 @@ export function AdminSecurityTab() {
           </button>
         </div>
       </div>
-
+  
       {/* Security Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-zinc-950/80 border border-white/5 rounded-2xl p-4 flex items-center gap-3">
@@ -189,9 +199,22 @@ export function AdminSecurityTab() {
             </div>
           )}
 
-          <form onSubmit={handlePasswordUpdate} className="space-y-3">
+        <form onSubmit={handlePasswordUpdate} className="space-y-3">
             <div>
-              <label className="block text-[10px] font-bold text-neutral-400 mb-1">كلمة المرور الحالية</label>
+              <label className="block text-[10px] font-bold text-neutral-400 mb-1">اسم مستخدم الإدارة (Admin Username)</label>
+              <input
+                type="text"
+                required
+                value={adminUsernameInput}
+                onChange={(e) => setAdminUsernameInput(e.target.value)}
+                placeholder="اسم المستخدم (مثال: admin)"
+                className="w-full bg-zinc-900 border border-neutral-800 focus:border-lime-400 rounded-xl px-3 py-2 text-xs text-white outline-none font-mono"
+                dir="ltr"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-neutral-400 mb-1">كلمة المرور الحالية (للتحقق)</label>
               <div className="relative">
                 <input
                   type={showPasswords ? "text" : "password"}
@@ -272,7 +295,7 @@ export function AdminSecurityTab() {
                   <th className="py-2.5 px-3">عنوان IP</th>
                   <th className="py-2.5 px-3">التوقيت</th>
                   <th className="py-2.5 px-3">حالة الدخول</th>
-                  <th className="py-2.5 px-3">البريد المحاول</th>
+                  <th className="py-2.5 px-3">اسم المستخدم المحاول</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-900/60 font-mono text-[11px]">
@@ -294,7 +317,7 @@ export function AdminSecurityTab() {
                       statusLabel = "تم حظر الهجوم 🛑";
                     }
 
-                    return (
+                   return (
                       <tr key={idx} className="hover:bg-zinc-900/40 transition">
                         <td className="py-3 px-3 text-white font-mono dir-ltr text-right">{log.ip}</td>
                         <td className="py-3 px-3 text-neutral-400 text-[10px]">
@@ -305,7 +328,9 @@ export function AdminSecurityTab() {
                             {statusLabel}
                           </span>
                         </td>
-                        <td className="py-3 px-3 text-neutral-300 font-sans truncate max-w-[140px]">{log.email}</td>
+                        <td className="py-3 px-3 text-neutral-300 font-sans truncate max-w-[140px]">
+                          {log.username || log.email || "مجهول"}
+                        </td>
                       </tr>
                     );
                   })
