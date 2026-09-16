@@ -107,6 +107,7 @@ export default function App() {
     } else {
       setSelectedVariants({});
     }
+  };
 const [customerUser, setCustomerUser] = useState<{ name: string; username: string; email?: string; isOwner?: boolean } | null>(() => {
     const stored = localStorage.getItem("techcore_customer");
     if (stored) {
