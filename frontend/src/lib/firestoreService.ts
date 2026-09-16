@@ -220,9 +220,13 @@ export function subscribeToHeroSettings(
     docRef,
     (snapshot) => {
       if (snapshot.exists()) {
-        onUpdate(snapshot.data() as HeroSettings);
-      } else {
-        onUpdate(defaultHeroSettings);
+        const data = snapshot.data() as HeroSettings;
+        if (data && data.title) {
+          onUpdate(data);
+          try {
+            localStorage.setItem("techcore_hero_settings", JSON.stringify(data));
+          } catch (e) {}
+        }
       }
     },
     async (error) => {
@@ -234,11 +238,14 @@ export function subscribeToHeroSettings(
         const res = await fetch(`${API_BASE_URL}/api/hero-settings`);
         if (res.ok) {
           const data = await res.json();
-          if (data && data.title) onUpdate(data);
+          if (data && data.title) {
+            onUpdate(data);
+            try {
+              localStorage.setItem("techcore_hero_settings", JSON.stringify(data));
+            } catch (e) {}
+          }
         }
-      } catch (e) {
-        onUpdate(defaultHeroSettings);
-      }
+      } catch (e) {}
       if (onError) onError(error);
     },
   );
