@@ -679,7 +679,7 @@ const [customerUser, setCustomerUser] = useState<{ name: string; username: strin
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 lg:px-8 pt-6 space-y-8 relative z-10">
 
-        {isAdminMode && customerUser && customerUser.isOwner === true && customerUser.email.toLowerCase() === (localStorage.getItem("techcore_owner_email") || "amine879mohamed@gmail.com").trim().toLowerCase() ? (
+        {isAdminMode && customerUser && customerUser.isOwner === true ? (
           <AdminDashboard
             products={products}
             onAddProduct={handleAddProduct}
