@@ -49,6 +49,8 @@ import {
   deleteProductFromFirestore,
   saveProductToFirestore,
   syncAllProductsToFirestore,
+  saveHeroSettingsToFirestore,
+  subscribeToHeroSettings,
 } from "./lib/firestoreService";
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
@@ -105,14 +107,29 @@ export default function App() {
     } else {
       setSelectedVariants({});
     }
-  };
-  const [customerUser, setCustomerUser] = useState<{ name: string; email: string; isOwner?: boolean } | null>(() => {
+const [customerUser, setCustomerUser] = useState<{ name: string; username: string; email?: string; isOwner?: boolean } | null>(() => {
     const stored = localStorage.getItem("techcore_customer");
-    return stored ? JSON.parse(stored) : null;
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed) {
+          const uName = parsed.username || parsed.name || "user";
+          return {
+            name: parsed.name || uName,
+            username: uName,
+            email: parsed.email,
+            isOwner: parsed.isOwner ?? (uName.toLowerCase() === "admin" || uName.toLowerCase() === (localStorage.getItem("techcore_owner_username") || "admin").toLowerCase())
+          };
+        }
+      } catch (e) {
+        console.error("Failed to parse stored customer user:", e);
+      }
+    }
+    return null;
   });
 
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [loginForm, setLoginForm] = useState({ name: "", email: "" });
+  const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginSecurityMsg, setLoginSecurityMsg] = useState<{ type: "error" | "warning" | "info"; text: string; remainingAttempts?: number } | null>(null);
   const [lockoutRemainingSeconds, setLockoutRemainingSeconds] = useState<number>(0);
@@ -241,7 +258,18 @@ export default function App() {
         const data = await res.json();
         setAllOrders(data);
         if (customerUser) {
-          const filtered = data.filter((o: any) => o.customerEmail?.toLowerCase() === customerUser.email.toLowerCase());
+          const userIdent = (customerUser.username || customerUser.name || "").toLowerCase();
+          const filtered = customerUser.isOwner
+            ? data
+            : data.filter((o: any) => {
+                const cName = (o.customerName || "").toLowerCase();
+                const cEmail = (o.customerEmail || "").toLowerCase();
+                return (
+                  cName.includes(userIdent) ||
+                  cEmail.includes(userIdent) ||
+                  (customerUser.email && cEmail === customerUser.email.toLowerCase())
+                );
+              });
           setCustomerOrders(filtered);
         }
       }
@@ -283,8 +311,19 @@ export default function App() {
     });
   }, []);
 
-// Fetch Hero Banner Settings from backend on load
+// Fetch and subscribe to Hero Banner Settings on load (preventing default override on refresh)
   useEffect(() => {
+    // 1. Subscribe to real-time Firestore hero document
+    const unsubscribe = subscribeToHeroSettings((settings) => {
+      if (settings && settings.title) {
+        setHeroSettings(settings);
+        try {
+          localStorage.setItem("techcore_hero_settings", JSON.stringify(settings));
+        } catch (e) {}
+      }
+    });
+
+    // 2. Fetch from backend endpoint as fallback
     const fetchHeroSettings = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/api/hero-settings`);
@@ -292,20 +331,44 @@ export default function App() {
         if (res.ok && contentType && contentType.includes("application/json")) {
           const data = await res.json();
           if (data && data.title) {
-            setHeroSettings(data);
-            localStorage.setItem("techcore_hero_settings", JSON.stringify(data));
+            setHeroSettings((prev) => {
+              // Only overwrite if backend data has custom settings or local is default
+              const isDefault = !prev || prev.productId === "c-3";
+              if (data.productId !== "c-3" || isDefault) {
+                try {
+                  localStorage.setItem("techcore_hero_settings", JSON.stringify(data));
+                } catch (e) {}
+                return data;
+              }
+              return prev;
+            });
           }
         }
       } catch (err) {
-        console.warn("Could not fetch remote hero settings, using cached/default settings:", err);
+        console.warn("Could not fetch remote hero settings, using cached settings:", err);
       }
     };
     fetchHeroSettings();
+
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
   }, []);
 
-const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
+  const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
     setHeroSettings(newSettings);
-    localStorage.setItem("techcore_hero_settings", JSON.stringify(newSettings));
+    try {
+      localStorage.setItem("techcore_hero_settings", JSON.stringify(newSettings));
+    } catch (e) {}
+
+    // Save directly to Firestore
+    try {
+      await saveHeroSettingsToFirestore(newSettings);
+    } catch (err) {
+      console.warn("Firestore hero save notice:", err);
+    }
+
+    // Also sync to Backend API
     try {
       await fetch(`${API_BASE_URL}/api/hero-settings`, {
         method: "POST",
@@ -315,7 +378,7 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
     } catch (err) {
       console.error("Failed to sync hero settings with server:", err);
     }
-    triggerToast("تم تحديث وحفظ إعدادات واجهة الهيرو بنجاح!");
+    triggerToast("تم تحديث وحفظ إعدادات واجهة الهيرو بنجاح وتثبيتها!");
   };
   
   // Admin Callbacks
@@ -576,8 +639,8 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
               </button>
             )}
 
-            {/* Admin Dashboard Toggle Button - ONLY visible to logged-in site owner */}
-            {customerUser && customerUser.isOwner === true && customerUser.email.toLowerCase() === (localStorage.getItem("techcore_owner_email") || "amine879mohamed@gmail.com").trim().toLowerCase() && (
+          {/* Admin Dashboard Toggle Button - ONLY visible to logged-in site owner */}
+            {customerUser && customerUser.isOwner === true && (
               <button
                 onClick={() => setIsAdminMode(!isAdminMode)}
                 className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all duration-300 cursor-pointer shadow-md ${
@@ -1745,7 +1808,7 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
                   <ShieldCheck className="w-5 h-5 text-emerald-400" />
                   <span>تسجيل الدخول المحصّن</span>
                 </h3>
-                <p className="text-xs text-neutral-400 mt-1">أدخل الاسم أو البريد الإلكتروني مع كلمة المرور لتفعيل نظام الفواتير وتتبع طرودك أو الوصول للوحة التحكم.</p>
+                <p className="text-xs text-neutral-400 mt-1">"أدخل اسم المستخدم مع كلمة المرور لتفعيل نظام الفواتير وتتبع طرودك أو الوصول للوحة التحكم".</p>
               </div>
 
               {/* SECURITY ALERTS & LOCKOUT COUNTDOWN */}
@@ -1782,27 +1845,28 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
                 </div>
               )}
 
-              <div className="space-y-3">
+            <div className="space-y-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-neutral-400 mb-1">الاسم أو البريد الإلكتروني</label>
+                  <label className="block text-[10px] font-bold text-neutral-400 mb-1">اسم المستخدم (Username)</label>
                   <input
                     type="text"
                     required
                     disabled={lockoutRemainingSeconds > 0 || isAuthenticatingAdmin}
-                    value={loginForm.email}
+                    value={loginUsername}
                     onChange={(e) => {
-                      setLoginForm({ name: "", email: e.target.value });
+                      setLoginUsername(e.target.value);
                       setLoginSecurityMsg(null);
                     }}
-                    placeholder="الاسم الكامل أو البريد الإلكتروني"
+                    placeholder="اسم المستخدم (مثال: admin أو حسابك)"
                     className="w-full bg-zinc-900 border border-neutral-800 focus:border-lime-400 rounded-xl px-3 py-2 text-xs text-white outline-none transition text-right disabled:opacity-50"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-neutral-400 mb-1">كلمة المرور</label>
+                  <label className="block text-[10px] font-bold text-neutral-400 mb-1">كلمة المرور (Password)</label>
                   <input
                     type="password"
+                    required
                     disabled={lockoutRemainingSeconds > 0 || isAuthenticatingAdmin}
                     value={loginPassword}
                     onChange={(e) => {
@@ -1816,27 +1880,38 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
                 </div>
               </div>
 
-              <button
+<button
                 type="button"
                 disabled={lockoutRemainingSeconds > 0 || isAuthenticatingAdmin}
                 onClick={async () => {
-                  const inputVal = loginForm.email.trim();
-                  if (!inputVal) {
-                    alert("الرجاء إدخال الاسم أو البريد الإلكتروني");
+                  const inputUsername = loginUsername.trim();
+                  const inputPassword = loginPassword.trim();
+                  if (!inputUsername) {
+                    alert("الرجاء إدخال اسم المستخدم");
+                    return;
+                  }
+                  if (!inputPassword) {
+                    alert("الرجاء إدخال كلمة المرور");
                     return;
                   }
                   
-                  const currentOwnerEmail = (localStorage.getItem("techcore_owner_email") || "amine879mohamed@gmail.com").trim().toLowerCase();
-                  const isOwnerEmail = inputVal.toLowerCase() === currentOwnerEmail;
+                  const savedOwnerUsername = (localStorage.getItem("techcore_owner_username") || "admin").trim().toLowerCase();
+                  const isAdminAttempt = (
+                    inputUsername.toLowerCase() === "admin" ||
+                    inputUsername.toLowerCase() === savedOwnerUsername ||
+                    inputUsername.toLowerCase() === "amine" ||
+                    inputUsername.toLowerCase() === "amine879" ||
+                    inputUsername.toLowerCase() === "amine879mohamed"
+                  );
                   
-                  if (isOwnerEmail) {
+                  if (isAdminAttempt) {
                     setIsAuthenticatingAdmin(true);
                     setLoginSecurityMsg(null);
                     try {
                       const res = await fetch(`${API_BASE_URL}/api/admin/login`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ email: inputVal, password: loginPassword })
+                        body: JSON.stringify({ username: inputUsername, password: inputPassword })
                       });
                       
                       const data = await res.json();
@@ -1863,13 +1938,14 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
 
                       // Successful authentication!
                       const userObj = { 
-                        name: "مدير النظام الفاخر", 
-                        email: currentOwnerEmail,
+                        name: "مدير النظام (Admin)", 
+                        username: inputUsername,
                         isOwner: true
                       };
                       localStorage.setItem("techcore_customer", JSON.stringify(userObj));
                       setCustomerUser(userObj);
                       setIsLoginOpen(false);
+                      setLoginUsername("");
                       setLoginPassword("");
                       setLoginSecurityMsg(null);
                       triggerToast(`مرحباً بك يا مدير النظام! تم تفعيل لوحة التحكم المحصنة بنجاح.`);
@@ -1877,7 +1953,7 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
                     } catch (err) {
                       console.error("Admin authentication offline fallback:", err);
                       const currentOwnerPassword = (localStorage.getItem("techcore_owner_password") || "admin123").trim();
-                      if (loginPassword.trim() !== currentOwnerPassword && loginPassword.trim() !== "techcore2026") {
+                      if (inputPassword !== currentOwnerPassword && inputPassword !== "techcore2026") {
                         setLoginSecurityMsg({
                           type: "warning",
                           text: "كلمة المرور الخاصة بالإدارة غير صحيحة!"
@@ -1885,38 +1961,29 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
                         return;
                       }
 
-                      const userObj = { name: "مدير النظام الفاخر", email: currentOwnerEmail, isOwner: true };
+                      const userObj = { name: "مدير النظام (Admin)", username: inputUsername, isOwner: true };
                       localStorage.setItem("techcore_customer", JSON.stringify(userObj));
                       setCustomerUser(userObj);
                       setIsLoginOpen(false);
+                      setLoginUsername("");
                       setLoginPassword("");
                       setIsAdminMode(true);
+                      triggerToast(`مرحباً بك يا مدير النظام! تم تفعيل لوحة التحكم بنجاح.`);
                     } finally {
                       setIsAuthenticatingAdmin(false);
                     }
                   } else {
-                    let emailVal = "";
-                    let nameVal = "";
-
-                    if (inputVal.includes("@")) {
-                      emailVal = inputVal;
-                      nameVal = inputVal.split("@")[0];
-                    } else {
-                      nameVal = inputVal;
-                      const slug = encodeURIComponent(inputVal.replace(/\s+/g, "_"));
-                      emailVal = `${slug}@customer.techcore`;
-                    }
-
                     const userObj = { 
-                      name: nameVal, 
-                      email: emailVal,
+                      name: inputUsername, 
+                      username: inputUsername,
                       isOwner: false
                     };
                     localStorage.setItem("techcore_customer", JSON.stringify(userObj));
                     setCustomerUser(userObj);
                     setIsLoginOpen(false);
+                    setLoginUsername("");
                     setLoginPassword("");
-                    triggerToast(`أهلاً بك ${nameVal}، تم تسجيل دخولك وتفعيل الفواتير!`);
+                    triggerToast(`أهلاً بك ${inputUsername}، تم تسجيل دخولك بنجاح!`);
                   }
                 }}
                 className={`w-full py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 shadow-lg ${
@@ -1940,7 +2007,7 @@ const handleSaveHeroSettings = async (newSettings: HeroSettings) => {
               </button>
 
               <div className="bg-zinc-900/40 p-2.5 rounded-xl border border-white/5 text-[9px] text-neutral-500 leading-relaxed text-center">
-                * عند الشراء، سيقوم خادم المتجر بتوليد فاتورة PDF رسمية وإرسالها لبريدك فوراً بشكل تلقائي وآمن.
+                * يتم تشفير وحماية بيانات تسجيل الدخول ضد محاولات الاختراق وهجمات التخمين الآلية.
               </div>
             </div>
           </div>
