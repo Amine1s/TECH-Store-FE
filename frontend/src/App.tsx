@@ -51,6 +51,7 @@ import {
   syncAllProductsToFirestore,
   saveHeroSettingsToFirestore,
   subscribeToHeroSettings,
+  subscribeToProducts,
 } from "./lib/firestoreService";
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
