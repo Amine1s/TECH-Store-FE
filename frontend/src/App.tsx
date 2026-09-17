@@ -286,8 +286,9 @@ const [customerUser, setCustomerUser] = useState<{ name: string; username: strin
     return () => clearInterval(interval);
   }, [customerUser]);
 
-  // Load products initially with local storage persistence
+  // Load products: fast local cache first, then live sync with Firestore (single source of truth)
   useEffect(() => {
+    // 1. Initial cached render from localStorage if available
     const stored = localStorage.getItem("techcore_products");
     if (stored) {
       try {
@@ -295,22 +296,30 @@ const [customerUser, setCustomerUser] = useState<{ name: string; username: strin
         if (parsed && Array.isArray(parsed) && parsed.length > 0) {
           setProducts(parsed);
           setFilteredProducts(parsed);
-          void syncAllProductsToFirestore(parsed).catch((err) => {
-            console.warn("Could not sync local catalog to Firestore:", err);
-          });
-          return;
         }
       } catch (e) {
         console.error("Failed to parse stored products", e);
       }
+    } else {
+      const fallback = getProducts();
+      setProducts(fallback);
+      setFilteredProducts(fallback);
     }
-    const all = getProducts();
-    setProducts(all);
-    setFilteredProducts(all);
-    localStorage.setItem("techcore_products", JSON.stringify(all));
-    void syncAllProductsToFirestore(all).catch((err) => {
-      console.warn("Could not seed catalog to Firestore:", err);
+
+    // 2. Real-time Firestore sync (source of truth - NEVER overwrites Firestore on startup!)
+    const unsubscribe = subscribeToProducts((firestoreProducts) => {
+      if (Array.isArray(firestoreProducts)) {
+        setProducts(firestoreProducts);
+        setFilteredProducts(firestoreProducts);
+        try {
+          localStorage.setItem("techcore_products", JSON.stringify(firestoreProducts));
+        } catch (e) {}
+      }
     });
+
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
   }, []);
 
 // Fetch and subscribe to Hero Banner Settings on load (preventing default override on refresh)
